@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-dark-moss: #0A140E;
+    --bg-light-leaf: #E8F0EA;
+    --green-forest: #28593B;
+    --gold: #D4AF37;
+    --text-offwhite: #F8F9FA;
+  }
+
+  body {
+    background-color: var(--bg-dark-moss);
+    color: var(--text-offwhite);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    cursor: default;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  .font-display {
+    font-family: 'Syne', 'Plus Jakarta Sans', sans-serif;
+  }
+
+  .font-mono-code {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Off-white Esverdeado (#E8F0EA) Background with Botanical Leaf Texture */
+.bg-leaf-light {
+  background-color: #E8F0EA;
+  background-image: radial-gradient(rgba(40, 89, 59, 0.06) 1px, transparent 0);
+  background-size: 28px 28px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0A140E;
+}
+::-webkit-scrollbar-thumb {
+  background: #28593B;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+/* Hide scrollbar for clean horizontal carousel */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphism Dark Moss Navbar */
+.glass-panel-moss {
+  background: rgba(10, 20, 14, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(40, 89, 59, 0.3);
+}
+
+/* Forest glow utilities */
+.forest-glow {
+  box-shadow: 0 0 30px rgba(40, 89, 59, 0.35);
+}
+.gold-glow {
+  box-shadow: 0 0 25px rgba(212, 175, 55, 0.25);
+}
+
+/* Custom Animations */
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(3deg) scale(1.02); }
+}
+
+.animate-sway {
+  animation: sway 8s infinite ease-in-out;
+}
