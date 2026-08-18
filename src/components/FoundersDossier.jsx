@@ -6,7 +6,7 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 1.2, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] },
   },
 };
 
@@ -14,14 +14,14 @@ const fadeIn = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { duration: 1.4, ease: 'easeOut' },
+    transition: { duration: 1, ease: 'easeOut' },
   },
 };
 
 const stagger = {
   visible: {
     transition: {
-      staggerChildren: 0.3,
+      staggerChildren: 0.2,
     },
   },
 };
@@ -35,9 +35,9 @@ export default function FoundersDossier() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
+          viewport={{ once: true, margin: '50px' }}
           variants={fadeUp}
-          className="mb-24"
+          className="mb-24 transform-gpu will-change-transform"
         >
           <div className="flex items-center gap-4 mb-6">
             <span className="w-12 h-[1px] bg-[#D4AF37]" />
@@ -58,17 +58,22 @@ export default function FoundersDossier() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
+          viewport={{ once: true, margin: '50px' }}
           variants={stagger}
-          className="flex flex-col lg:flex-row gap-12 lg:gap-24 items-stretch mb-32 lg:mb-40"
+          className="flex flex-col lg:flex-row gap-12 lg:gap-24 items-stretch mb-32 lg:mb-40 transform-gpu will-change-transform"
         >
-          {/* Foto Editorial */}
+          {/* Foto Editorial com Otimização Assíncrona e Aceleração GPU */}
           <motion.div variants={fadeIn} className="w-full lg:w-1/2">
-            <div className="overflow-hidden rounded-sm">
+            <div className="overflow-hidden rounded-sm bg-[#112017]">
               <img
                 src="/media_1786120579526.png"
                 alt="Gabriel Hatakeyama Rodrigues — CTO da Dactyla Code"
-                className="w-full aspect-[3/4] object-cover object-center grayscale hover:grayscale-[30%] transition-all duration-[1500ms] ease-out scale-100 hover:scale-[1.03]"
+                loading="lazy"
+                decoding="async"
+                fetchPriority="high"
+                width={600}
+                height={800}
+                className="w-full aspect-[3/4] object-cover object-center grayscale hover:grayscale-[30%] transition-all duration-[1500ms] ease-out scale-100 hover:scale-[1.03] transform-gpu will-change-transform"
               />
             </div>
           </motion.div>
@@ -147,17 +152,21 @@ export default function FoundersDossier() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
+          viewport={{ once: true, margin: '50px' }}
           variants={stagger}
-          className="flex flex-col lg:flex-row-reverse gap-12 lg:gap-24 items-stretch"
+          className="flex flex-col lg:flex-row-reverse gap-12 lg:gap-24 items-stretch transform-gpu will-change-transform"
         >
-          {/* Foto Editorial */}
+          {/* Foto Editorial com Otimização Assíncrona e Aceleração GPU */}
           <motion.div variants={fadeIn} className="w-full lg:w-1/2">
-            <div className="overflow-hidden rounded-sm">
+            <div className="overflow-hidden rounded-sm bg-[#112017]">
               <img
                 src="/media_1786120555908.png"
                 alt="Matheus Vicente — Diretor Criativo da Dactyla Code"
-                className="w-full aspect-[3/4] object-cover object-center grayscale hover:grayscale-[30%] transition-all duration-[1500ms] ease-out scale-100 hover:scale-[1.03]"
+                loading="lazy"
+                decoding="async"
+                width={600}
+                height={800}
+                className="w-full aspect-[3/4] object-cover object-center grayscale hover:grayscale-[30%] transition-all duration-[1500ms] ease-out scale-100 hover:scale-[1.03] transform-gpu will-change-transform"
               />
             </div>
           </motion.div>

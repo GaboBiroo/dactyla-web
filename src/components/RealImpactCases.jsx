@@ -15,7 +15,7 @@ const headerVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 1, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] },
   },
 };
 
@@ -24,8 +24,8 @@ const stagger = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.2,
-      delayChildren: 0.15,
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
     },
   },
 };
@@ -79,9 +79,9 @@ export default function RealImpactCases() {
           <motion.div
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, margin: '-80px' }}
+            viewport={{ once: true, margin: '50px' }}
             variants={stagger}
-            className="lg:col-span-5"
+            className="lg:col-span-5 transform-gpu will-change-transform"
           >
             <motion.div variants={headerVariants} className="flex items-center gap-4 mb-6">
               <span className="w-12 h-[1px] bg-[#D4AF37]" />
@@ -114,15 +114,15 @@ export default function RealImpactCases() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
+          viewport={{ once: true, margin: '50px' }}
           variants={stagger}
-          className="space-y-0"
+          className="space-y-0 transform-gpu will-change-transform"
         >
-          {cases.map((c, i) => (
+          {cases.map((c) => (
             <motion.article
               key={c.id}
               variants={fadeUp}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 py-16 first:pt-0 border-b border-[#E8F0EA]/5 last:border-b-0"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-20 py-16 first:pt-0 border-b border-[#E8F0EA]/5 last:border-b-0 transform-gpu"
             >
               {/* Left: Index + Sector + Title */}
               <div className="lg:col-span-4 flex flex-col justify-start">

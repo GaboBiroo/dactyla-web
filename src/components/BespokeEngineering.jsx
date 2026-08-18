@@ -15,7 +15,7 @@ const headerFade = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 1, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] },
   },
 };
 
@@ -24,7 +24,7 @@ const stagger = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.2,
+      staggerChildren: 0.15,
       delayChildren: 0.1,
     },
   },
@@ -81,9 +81,9 @@ export default function BespokeEngineering() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
+          viewport={{ once: true, margin: '50px' }}
           variants={stagger}
-          className="max-w-3xl mb-24"
+          className="max-w-3xl mb-24 transform-gpu will-change-transform"
         >
           <motion.div variants={headerFade} className="flex items-center gap-4 mb-6">
             <span className="w-12 h-[1px] bg-[#D4AF37]" />
@@ -114,15 +114,15 @@ export default function BespokeEngineering() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
+          viewport={{ once: true, margin: '50px' }}
           variants={stagger}
-          className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#E8F0EA]/5 rounded-sm overflow-hidden"
+          className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#E8F0EA]/5 rounded-sm overflow-hidden transform-gpu will-change-transform"
         >
           {services.map((service) => (
             <motion.div
               key={service.id}
               variants={fadeUp}
-              className="bg-[#0A140E] p-10 md:p-12 flex flex-col justify-between group hover:bg-[#E8F0EA]/[0.02] transition-colors duration-700"
+              className="bg-[#0A140E] p-10 md:p-12 flex flex-col justify-between group hover:bg-[#E8F0EA]/[0.02] transition-colors duration-700 transform-gpu"
             >
               <div>
                 {/* Icon */}
