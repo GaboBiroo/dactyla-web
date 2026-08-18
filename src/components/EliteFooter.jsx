@@ -1,5 +1,7 @@
-import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getCalApi } from '@calcom/embed-react';
 
 const fadeUp = {
@@ -23,11 +25,14 @@ const stagger = {
 };
 
 export default function EliteFooter() {
+  const [openDropdown, setOpenDropdown] = useState(null);
+
   useEffect(() => {
     (async function () {
       const cal = await getCalApi();
       cal("ui", {
-        styles: { branding: { brandColor: "#0A140E" } },
+        theme: "dark",
+        styles: { branding: { brandColor: "#D4AF37" } },
         hideEventTypeDetails: false,
         layout: "month_view",
       });
@@ -100,7 +105,8 @@ export default function EliteFooter() {
               variants={fadeUp}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              data-cal-link="seu-usuario/diagnostico"
+              data-cal-link="agenciadactylacode-ddyia5/30min"
+              data-cal-config='{"layout":"month_view"}'
               className="w-full text-left group flex items-center justify-between p-6 border border-[#E8F0EA]/10 rounded-sm hover:border-[#E8F0EA]/25 transition-all duration-500 cursor-pointer"
             >
               <div className="flex items-center gap-4">
@@ -163,7 +169,7 @@ export default function EliteFooter() {
           {/* Contact Details */}
           <div className="space-y-2">
             <a
-              href="mailto:hello@dactylacode.com"
+              href="mailto:agenciadactylacode@gmail.com"
               className="text-sm text-[#E8F0EA]/40 hover:text-[#D4AF37] transition-colors duration-300 font-light block"
             >
               hello@dactylacode.com
@@ -175,26 +181,156 @@ export default function EliteFooter() {
             </p>
           </div>
 
-          {/* Social Links */}
+          {/* Social Links (Interactive Executive Modals) */}
           <div className="flex flex-col items-start md:items-end gap-2">
             <div className="flex items-center gap-6">
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#E8F0EA]/30 hover:text-[#D4AF37] transition-colors duration-300 font-light"
+
+              {/* LinkedIn Interactive Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => setOpenDropdown('linkedin')}
+                onMouseLeave={() => setOpenDropdown(null)}
               >
-                LinkedIn
-              </a>
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#E8F0EA]/30 hover:text-[#D4AF37] transition-colors duration-300 font-light"
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'linkedin' ? null : 'linkedin')}
+                  className="flex items-center gap-1.5 text-xs text-[#E8F0EA]/40 hover:text-[#D4AF37] transition-colors duration-300 font-light cursor-pointer group py-1"
+                >
+                  <svg className="w-4 h-4 fill-current opacity-60 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24">
+                    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.45a1.6 1.6 0 0 0-1.6 1.6 1.6 1.6 0 0 0 1.6 1.6 1.6 1.6 0 0 0 1.6-1.6 1.6 1.6 0 0 0-1.6-1.6Z" />
+                  </svg>
+                  <span>LinkedIn</span>
+                </button>
+
+                <AnimatePresence>
+                  {openDropdown === 'linkedin' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                      className="absolute bottom-full mb-3 left-0 md:left-auto md:right-0 bg-[#0A140E] border border-[#D4AF37]/30 rounded-md shadow-2xl p-3 z-30 min-w-[240px] backdrop-blur-xl"
+                    >
+                      <div className="space-y-1">
+                        <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#D4AF37]/70 border-b border-[#E8F0EA]/5 mb-1.5 pb-1">
+                          Diretoria Executiva
+                        </div>
+                        <a
+                          href="https://www.linkedin.com/in/gabriel-hatakeyama-rodrigues-343513274/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between px-2.5 py-2 rounded-sm text-xs text-[#E8F0EA]/70 hover:text-[#D4AF37] hover:bg-[#E8F0EA]/5 transition-all duration-300 group/link"
+                        >
+                          <div className="flex flex-col text-left">
+                            <span className="font-medium text-[#E8F0EA] group-hover/link:text-[#D4AF37] transition-colors">
+                              Gabriel Hatakeyama
+                            </span>
+                            <span className="text-[10px] text-[#E8F0EA]/40 font-light">
+                              Chief Technology Officer
+                            </span>
+                          </div>
+                          <span className="text-xs text-[#E8F0EA]/30 group-hover/link:text-[#D4AF37] group-hover/link:translate-x-0.5 transition-all">
+                            ↗
+                          </span>
+                        </a>
+                        <a
+                          href="https://www.linkedin.com/in/matheus-vicente-dos-santos-pinto/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between px-2.5 py-2 rounded-sm text-xs text-[#E8F0EA]/70 hover:text-[#D4AF37] hover:bg-[#E8F0EA]/5 transition-all duration-300 group/link"
+                        >
+                          <div className="flex flex-col text-left">
+                            <span className="font-medium text-[#E8F0EA] group-hover/link:text-[#D4AF37] transition-colors">
+                              Matheus Vicente
+                            </span>
+                            <span className="text-[10px] text-[#E8F0EA]/40 font-light">
+                              Diretor Criativo & UX/UI
+                            </span>
+                          </div>
+                          <span className="text-xs text-[#E8F0EA]/30 group-hover/link:text-[#D4AF37] group-hover/link:translate-x-0.5 transition-all">
+                            ↗
+                          </span>
+                        </a>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* GitHub Interactive Dropdown */}
+              <div
+                className="relative"
+                onMouseEnter={() => setOpenDropdown('github')}
+                onMouseLeave={() => setOpenDropdown(null)}
               >
-                GitHub
-              </a>
+                <button
+                  type="button"
+                  onClick={() => setOpenDropdown(openDropdown === 'github' ? null : 'github')}
+                  className="flex items-center gap-1.5 text-xs text-[#E8F0EA]/40 hover:text-[#D4AF37] transition-colors duration-300 font-light cursor-pointer group py-1"
+                >
+                  <svg className="w-4 h-4 fill-current opacity-60 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24">
+                    <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2Z" />
+                  </svg>
+                  <span>GitHub</span>
+                </button>
+
+                <AnimatePresence>
+                  {openDropdown === 'github' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.96 }}
+                      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                      className="absolute bottom-full mb-3 left-0 md:left-auto md:right-0 bg-[#0A140E] border border-[#D4AF37]/30 rounded-md shadow-2xl p-3 z-30 min-w-[240px] backdrop-blur-xl"
+                    >
+                      <div className="space-y-1">
+                        <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest text-[#D4AF37]/70 border-b border-[#E8F0EA]/5 mb-1.5 pb-1">
+                          Repositórios & Engenharia
+                        </div>
+                        <a
+                          href="https://github.com/GaboBiroo"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between px-2.5 py-2 rounded-sm text-xs text-[#E8F0EA]/70 hover:text-[#D4AF37] hover:bg-[#E8F0EA]/5 transition-all duration-300 group/link"
+                        >
+                          <div className="flex flex-col text-left">
+                            <span className="font-medium text-[#E8F0EA] group-hover/link:text-[#D4AF37] transition-colors">
+                              Gabriel Hatakeyama
+                            </span>
+                            <span className="text-[10px] text-[#E8F0EA]/40 font-mono">
+                              @GaboBiroo
+                            </span>
+                          </div>
+                          <span className="text-xs text-[#E8F0EA]/30 group-hover/link:text-[#D4AF37] group-hover/link:translate-x-0.5 transition-all">
+                            ↗
+                          </span>
+                        </a>
+                        <a
+                          href="https://github.com/matheusvicente-dev"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between px-2.5 py-2 rounded-sm text-xs text-[#E8F0EA]/70 hover:text-[#D4AF37] hover:bg-[#E8F0EA]/5 transition-all duration-300 group/link"
+                        >
+                          <div className="flex flex-col text-left">
+                            <span className="font-medium text-[#E8F0EA] group-hover/link:text-[#D4AF37] transition-colors">
+                              Matheus Vicente
+                            </span>
+                            <span className="text-[10px] text-[#E8F0EA]/40 font-mono">
+                              @matheusvicente-dev
+                            </span>
+                          </div>
+                          <span className="text-xs text-[#E8F0EA]/30 group-hover/link:text-[#D4AF37] group-hover/link:translate-x-0.5 transition-all">
+                            ↗
+                          </span>
+                        </a>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
             </div>
+
             <p className="text-[11px] text-[#E8F0EA]/20 font-light mt-2">
               © 2026 Dactyla Code. Todos os direitos reservados.
             </p>
