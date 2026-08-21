@@ -1,0 +1,46 @@
+#!/usr/bin/env php
+<?php
+
+define('LARAVEL_START', microtime(true));
+
+$args = $argv;
+array_shift($args); // remove script name
+
+$command = $args[0] ?? 'help';
+
+if ($command === 'serve') {
+    $port = 8000;
+    foreach ($args as $idx => $arg) {
+        if (strpos($arg, '--port=') === 0) {
+            $port = (int) substr($arg, 7);
+        }
+    }
+    
+    echo "\n  \033[32mINFO\033[0m  Dactyla Presença Prime Webhook Gateway Server running on [\033[1mhttp://127.0.0.1:{$port}\033[0m].\n\n";
+    echo "  Press Ctrl+C to stop the server\n\n";
+    
+    passthru("php -S 127.0.0.1:{$port} -t public public/index.php");
+    exit(0);
+}
+
+if ($command === 'tinker' || $command === 'db:show') {
+    $baseDir = __DIR__;
+    $sqliteFile = $baseDir . '/database/database.sqlite';
+    if (!file_exists($sqliteFile)) {
+        echo "Banco de dados SQLite ainda não foi criado.\n";
+        exit(1);
+    }
+    $pdo = new PDO('sqlite:' . $sqliteFile);
+    echo "=== ULTIMOS LEADS NA FSM (database.sqlite) ===\n";
+    $stmt = $pdo->query("SELECT * FROM leads ORDER BY id DESC LIMIT 5");
+    $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    print_r($leads);
+    
+    echo "=== ULTIMAS MENSAGENS E WAMID ===\n";
+    $stmt = $pdo->query("SELECT id, lead_id, wamid, direction, status, content, created_at FROM messages ORDER BY id DESC LIMIT 5");
+    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    print_r($messages);
+    exit(0);
+}
+
+echo "Dactyla Code CLI v1.0.0\nComandos disponíveis:\n  php artisan serve --port=8000\n  php artisan tinker\n";

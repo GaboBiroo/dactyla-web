@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
 import ConcreteImpact from './components/ConcreteImpact';
@@ -7,8 +7,33 @@ import FoundersDossier from './components/FoundersDossier';
 import RealImpactCases from './components/RealImpactCases';
 import BespokeEngineering from './components/BespokeEngineering';
 import EliteFooter from './components/EliteFooter';
+import PrivacyPolicy from './components/PrivacyPolicy';
 
 export default function App() {
+  const [route, setRoute] = useState(
+    typeof window !== 'undefined' ? window.location.pathname : '/'
+  );
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setRoute(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (path) => {
+    if (typeof window !== 'undefined') {
+      window.history.pushState({}, '', path);
+      setRoute(path);
+      window.scrollTo(0, 0);
+    }
+  };
+
+  if (route === '/privacidade') {
+    return <PrivacyPolicy onBack={() => navigateTo('/')} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#0A140E] text-[#E8F0EA] selection:bg-[#D4AF37] selection:text-[#0A140E] antialiased">
       <Navbar />
@@ -33,7 +58,7 @@ export default function App() {
       </main>
 
       {/* 7. Fechamento de Funil — Diagnóstico, CTA Executivo e Rodapé Institucional */}
-      <EliteFooter />
+      <EliteFooter onOpenPrivacy={() => navigateTo('/privacidade')} />
     </div>
   );
 }
