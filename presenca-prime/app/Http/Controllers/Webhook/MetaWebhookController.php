@@ -41,7 +41,6 @@ class MetaWebhookController extends Controller
 
     /**
      * Endpoint POST: Gateway Principal de Ingestão Event-Driven.
-     * SLA Crítico: Resposta em < 200ms com HTTP 200 OK para evitar Exponential Backoff.
      */
     public function handle(Request $request): JsonResponse
     {
@@ -58,14 +57,27 @@ class MetaWebhookController extends Controller
             Log::info('[Meta Webhook] HMAC Autenticado com sucesso.');
 
             $payload = $request->all();
+
+            // Log de auditoria da carga bruta recebida da Meta
+            Log::debug('[Meta Webhook Payload Raw]', ['payload' => $payload]);
+
+            // Busca por mensagens na estrutura padrão do payload Meta Cloud API
             $messageData = data_get($payload, 'entry.0.changes.0.value.messages.0');
+
+            // Fallback de verificação caso a mensagem venha em estrutura de nível raiz ou variante
+            if (!$messageData) {
+                if (isset($payload['messages'][0])) {
+                    $messageData = $payload['messages'][0];
+                }
+            }
 
             if ($messageData && isset($messageData['id'])) {
                 $wamid = (string) $messageData['id'];
 
                 Log::info('[Meta Webhook] Mensagem identificada no payload.', [
                     'wamid' => $wamid,
-                    'from' => $messageData['from'] ?? 'Unknown'
+                    'from' => $messageData['from'] ?? 'Unknown',
+                    'body' => data_get($messageData, 'text.body', '[Outro Tipo]')
                 ]);
 
                 // REGRA #2: Trava Transacional de Idempotência
@@ -79,12 +91,12 @@ class MetaWebhookController extends Controller
                 // REGRA #3: Desacoplamento Assíncrono via ProcessWhatsAppMessage
                 ProcessWhatsAppMessage::dispatch($payload);
 
-                Log::info('[Meta Webhook] Mensagem processada e salva na FSM.', [
+                Log::info('[Meta Webhook] Mensagem salva e vinculada à FSM com sucesso!', [
                     'wamid' => $wamid
                 ]);
             } else {
-                Log::info('[Meta Webhook] Evento recebido da Meta sem nó de mensagens (ex: Status/Delivery Receipt).', [
-                    'field' => data_get($payload, 'entry.0.changes.0.field')
+                Log::info('[Meta Webhook] Evento de notificação/status da Meta recebido (sem texto de mensagem).', [
+                    'raw_payload_structure' => array_keys($payload)
                 ]);
             }
 
