@@ -15,7 +15,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', onScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -24,7 +24,7 @@ export default function Navbar() {
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: 'easeOut' }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 transform-gpu will-change-transform ${
         scrolled
           ? 'backdrop-blur-md bg-[#0A140E]/85 border-b border-[#E8F0EA]/5 shadow-lg'
           : 'bg-transparent'
@@ -37,6 +37,10 @@ export default function Navbar() {
           <img
             src="/logo-placeholder.svg"
             alt="Dactyla Code"
+            width={32}
+            height={32}
+            loading="eager"
+            decoding="async"
             className="w-8 h-8 opacity-90 group-hover:opacity-100 transition-opacity"
           />
           <span className="text-xl font-serif font-light tracking-tight text-[#E8F0EA] group-hover:text-[#D4AF37] transition-colors duration-500">
@@ -62,7 +66,7 @@ export default function Navbar() {
         {/* Mobile Burger */}
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          className="md:hidden flex flex-col gap-1.5 p-2 cursor-pointer"
           aria-label="Menu"
         >
           <span className={`w-6 h-[1px] bg-[#E8F0EA] transition-all duration-300 ${mobileOpen ? 'rotate-45 translate-y-[3.5px]' : ''}`} />
@@ -77,7 +81,7 @@ export default function Navbar() {
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="md:hidden bg-[#0A140E]/95 backdrop-blur-xl border-t border-[#E8F0EA]/5 px-6 pb-8 pt-4"
+          className="md:hidden bg-[#0A140E]/95 backdrop-blur-xl border-t border-[#E8F0EA]/5 px-6 pb-8 pt-4 transform-gpu will-change-transform"
         >
           <ul className="space-y-5">
             {navLinks.map((link) => (
@@ -85,7 +89,7 @@ export default function Navbar() {
                 <a
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="text-lg font-serif font-light text-[#E8F0EA]/80 hover:text-[#D4AF37] transition-colors"
+                  className="text-lg font-serif font-light text-[#E8F0EA]/80 hover:text-[#D4AF37] transition-colors block"
                 >
                   {link.label}
                 </a>

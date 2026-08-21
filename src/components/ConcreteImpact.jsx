@@ -6,14 +6,14 @@ const fadeUp = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 1.2, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] },
   },
 };
 
 const stagger = {
   visible: {
     transition: {
-      staggerChildren: 0.25,
+      staggerChildren: 0.2,
     },
   },
 };
@@ -63,9 +63,9 @@ export default function ConcreteImpact() {
         <motion.div
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
+          viewport={{ once: true, margin: '50px' }}
           variants={stagger}
-          className="mb-28 max-w-3xl"
+          className="mb-28 max-w-3xl transform-gpu will-change-transform"
         >
           <motion.div variants={fadeUp} className="flex items-center gap-4 mb-6">
             <span className="w-12 h-[1px] bg-[#D4AF37]" />
@@ -93,14 +93,14 @@ export default function ConcreteImpact() {
 
         {/* Impact Blocks */}
         <div className="space-y-28">
-          {impactBlocks.map((block, index) => (
+          {impactBlocks.map((block) => (
             <motion.div
               key={block.id}
               initial="hidden"
               whileInView="visible"
-              viewport={{ once: true, margin: '-80px' }}
+              viewport={{ once: true, margin: '50px' }}
               variants={stagger}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start transform-gpu will-change-transform"
             >
               {/* Left Column: The Number & Problem */}
               <motion.div

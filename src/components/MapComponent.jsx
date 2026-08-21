@@ -39,7 +39,7 @@ export default function MapComponent({ activeId, setActiveId }) {
   const defaultPosition = [-23.6268, -45.4128];
 
   return (
-    <div className="w-full h-[450px] md:h-[500px] rounded-2xl overflow-hidden border border-[#28593B]/40 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative z-10">
+    <div className="w-full h-[450px] md:h-[500px] rounded-2xl overflow-hidden border border-[#28593B]/40 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative z-10 pointer-events-none md:pointer-events-auto transform-gpu will-change-transform">
       <MapContainer
         center={defaultPosition}
         zoom={13}

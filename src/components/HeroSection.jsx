@@ -1,4 +1,4 @@
-import React, { useRef, Suspense, Component, useState } from 'react';
+import React, { useRef, Suspense, Component, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Center } from '@react-three/drei';
 import { motion } from 'framer-motion';
@@ -15,6 +15,7 @@ function ModelLoader() {
   );
 }
 
+// Fallback inside WebGL Canvas
 function RotatingFallback() {
   const meshRef = useRef(null);
   useFrame((_, delta) => {
@@ -28,6 +29,26 @@ function RotatingFallback() {
       <octahedronGeometry args={[1.5, 0]} />
       <meshStandardMaterial color="#D4AF37" wireframe />
     </mesh>
+  );
+}
+
+// Ultra-lightweight standalone GPU wireframe for Mobile (Zero WebGL CPU/GPU overhead)
+function StandaloneRotatingGeometry() {
+  return (
+    <div className="w-full h-full flex items-center justify-center relative transform-gpu will-change-transform pointer-events-none">
+      <div className="relative w-44 h-44 md:w-56 md:h-56 flex items-center justify-center animate-[spin_16s_linear_infinite]">
+        <svg viewBox="0 0 200 200" className="w-full h-full text-[#D4AF37] opacity-80 drop-shadow-[0_0_20px_rgba(212,175,55,0.35)]">
+          <polygon points="100,20 175,70 175,140 100,180 25,140 25,70" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 2" />
+          <line x1="100" y1="20" x2="100" y2="180" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="25" y1="70" x2="175" y2="70" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+          <line x1="25" y1="140" x2="175" y2="140" stroke="currentColor" strokeWidth="1" opacity="0.6" />
+          <line x1="100" y1="20" x2="175" y2="140" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+          <line x1="100" y1="20" x2="25" y2="140" stroke="currentColor" strokeWidth="1" opacity="0.4" />
+          <circle cx="100" cy="100" r="5" fill="#D4AF37" />
+        </svg>
+      </div>
+      <div className="absolute inset-0 bg-radial from-[#D4AF37]/10 via-transparent to-transparent pointer-events-none" />
+    </div>
   );
 }
 
@@ -50,18 +71,28 @@ const fadeUp = {
   visible: (delay = 0) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 1.2, delay, ease: [0.25, 0.1, 0.25, 1] },
+    transition: { duration: 0.8, delay, ease: [0.25, 0.1, 0.25, 1] },
   }),
 };
 
 export default function HeroSection() {
   const [activeId, setActiveId] = useState(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const checkIsDesktop = () => {
+      setIsDesktop(window.innerWidth >= 768);
+    };
+    checkIsDesktop();
+    window.addEventListener('resize', checkIsDesktop, { passive: true });
+    return () => window.removeEventListener('resize', checkIsDesktop);
+  }, []);
 
   return (
     <section id="home" className="relative w-full bg-[#0A140E] text-[#E8F0EA] pt-24 pb-20 px-6 overflow-hidden">
 
-      {/* Ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-[#28593B]/8 rounded-full blur-[180px] pointer-events-none z-0" />
+      {/* Ambient glow with GPU compositing */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[700px] bg-[#28593B]/8 rounded-full blur-[180px] pointer-events-none z-0 transform-gpu will-change-transform" />
 
       <div className="max-w-7xl mx-auto relative z-10 space-y-20">
 
@@ -84,7 +115,7 @@ export default function HeroSection() {
             </motion.div>
 
             <motion.h1
-              custom={0.15}
+              custom={0.1}
               initial="hidden"
               animate="visible"
               variants={fadeUp}
@@ -96,7 +127,7 @@ export default function HeroSection() {
             </motion.h1>
 
             <motion.p
-              custom={0.3}
+              custom={0.2}
               initial="hidden"
               animate="visible"
               variants={fadeUp}
@@ -107,7 +138,7 @@ export default function HeroSection() {
             </motion.p>
 
             <motion.div
-              custom={0.45}
+              custom={0.3}
               initial="hidden"
               animate="visible"
               variants={fadeUp}
@@ -115,7 +146,7 @@ export default function HeroSection() {
             >
               <a
                 href="#pacotes"
-                className="inline-block px-8 py-3.5 bg-[#D4AF37] text-[#0A140E] text-sm font-medium tracking-wide rounded-sm hover:bg-[#E8F0EA] transition-colors duration-500"
+                className="inline-block px-8 py-3.5 bg-[#D4AF37] text-[#0A140E] text-sm font-medium tracking-wide rounded-sm hover:bg-[#E8F0EA] transition-colors duration-500 transform-gpu"
               >
                 Ver Pacotes
               </a>
@@ -128,24 +159,32 @@ export default function HeroSection() {
             </motion.div>
           </div>
 
-          {/* 3D Mascot */}
+          {/* 3D Mascot / Lightweight Mobile Fallback Container with Scroll Trap Prevention */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1.4, delay: 0.4 }}
-            className="lg:col-span-5 h-[380px] md:h-[480px] relative rounded-sm overflow-hidden"
+            transition={{ duration: 1, delay: 0.2 }}
+            className="lg:col-span-5 h-[340px] md:h-[480px] relative rounded-sm overflow-hidden pointer-events-none md:pointer-events-auto transform-gpu will-change-transform"
           >
-            <Canvas camera={{ position: [0, 0, 7], fov: 45 }}>
-              <ambientLight intensity={0.7} />
-              <directionalLight position={[10, 10, 5]} intensity={1.8} color="#E8F0EA" />
-              <pointLight position={[-5, -5, 5]} intensity={2.5} color="#D4AF37" />
-              <Suspense fallback={<RotatingFallback />}>
-                <ModelErrorBoundary>
-                  <ModelLoader />
-                </ModelErrorBoundary>
+            {isDesktop ? (
+              <Suspense fallback={<StandaloneRotatingGeometry />}>
+                <Canvas
+                  camera={{ position: [0, 0, 7], fov: 45 }}
+                  dpr={[1, 1.5]}
+                  gl={{ antialias: false, powerPreference: 'high-performance' }}
+                >
+                  <ambientLight intensity={0.7} />
+                  <directionalLight position={[10, 10, 5]} intensity={1.8} color="#E8F0EA" />
+                  <pointLight position={[-5, -5, 5]} intensity={2.5} color="#D4AF37" />
+                  <ModelErrorBoundary>
+                    <ModelLoader />
+                  </ModelErrorBoundary>
+                  <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI / 2} autoRotate autoRotateSpeed={0.8} />
+                </Canvas>
               </Suspense>
-              <OrbitControls enableZoom={false} enablePan={false} maxPolarAngle={Math.PI / 2} autoRotate autoRotateSpeed={0.8} />
-            </Canvas>
+            ) : (
+              <StandaloneRotatingGeometry />
+            )}
           </motion.div>
         </div>
 
@@ -153,8 +192,9 @@ export default function HeroSection() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, ease: 'easeOut' }}
+          viewport={{ once: true, margin: '50px' }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="transform-gpu will-change-transform"
         >
           {comercios.length > 0 ? (
             <div className="border border-[#E8F0EA]/5 rounded-sm p-8 md:p-10">
@@ -216,7 +256,7 @@ export default function HeroSection() {
               </div>
               <a
                 href="#pacotes"
-                className="shrink-0 inline-block px-10 py-4 bg-[#D4AF37] text-[#0A140E] text-sm font-medium tracking-wide rounded-sm hover:bg-[#E8F0EA] transition-colors duration-500"
+                className="shrink-0 inline-block px-10 py-4 bg-[#D4AF37] text-[#0A140E] text-sm font-medium tracking-wide rounded-sm hover:bg-[#E8F0EA] transition-colors duration-500 transform-gpu"
               >
                 Garantir Posição
               </a>
@@ -224,12 +264,13 @@ export default function HeroSection() {
           )}
         </motion.div>
 
-        {/* ─── MAP (CLEAN — NO TECH OVERLAYS) ─── */}
+        {/* ─── MAP CONTAINER WITH SCROLL TRAP PREVENTION & GPU ACCELERATION ─── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1, delay: 0.15 }}
+          viewport={{ once: true, margin: '50px' }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="pointer-events-none md:pointer-events-auto transform-gpu will-change-transform"
         >
           <MapComponent activeId={activeId} setActiveId={setActiveId} />
         </motion.div>

@@ -63,9 +63,9 @@ export default function PricingSection() {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, margin: '50px' }}
           transition={{ duration: 0.8 }}
-          className="text-center max-w-3xl mx-auto mb-20"
+          className="text-center max-w-3xl mx-auto mb-20 transform-gpu will-change-transform"
         >
           <span className="text-xs font-mono uppercase tracking-[0.3em] text-[#28593B] mb-4 block font-bold">
             ARQUITETURA DE LUXO // PRECIFICAÇÃO DE IMPACTO
@@ -87,10 +87,10 @@ export default function PricingSection() {
                 key={tier.id}
                 initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
+                viewport={{ once: true, margin: '50px' }}
                 transition={{ duration: 0.6, delay: index * 0.15 }}
                 whileHover={{ y: isFeatured ? -8 : -5 }}
-                className={`bg-[#0A140E] text-[#E8F0EA] rounded-2xl p-8 md:p-10 flex flex-col justify-between transition-all duration-500 relative ${
+                className={`bg-[#0A140E] text-[#E8F0EA] rounded-2xl p-8 md:p-10 flex flex-col justify-between transition-all duration-500 relative transform-gpu will-change-transform ${
                   isFeatured
                     ? 'md:scale-105 border-2 border-[#D4AF37] shadow-[0_0_30px_rgba(212,175,55,0.2),inset_0_0_30px_rgba(212,175,55,0.15)] z-20'
                     : 'border border-[#28593B]/30 hover:border-[#D4AF37]/50 shadow-xl z-10'
@@ -149,13 +149,13 @@ export default function PricingSection() {
                   </ul>
                 </div>
 
-                {/* CTA Micro-interaction Button with Lux Hover Transition */}
+                {/* CTA Button */}
                 <div className="pt-4 border-t border-[#28593B]/20">
                   <motion.a
                     href="#contato"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
-                    className={`w-full inline-block text-center py-3.5 px-6 rounded-xl font-mono text-sm uppercase tracking-wider transition-all duration-300 font-bold ${
+                    className={`w-full inline-block text-center py-3.5 px-6 rounded-xl font-mono text-sm uppercase tracking-wider transition-all duration-300 font-bold transform-gpu ${
                       isFeatured
                         ? 'bg-[#D4AF37] text-[#0A140E] shadow-[0_0_25px_rgba(212,175,55,0.4)] hover:bg-[#E8F0EA]'
                         : 'border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A140E] hover:shadow-[0_0_20px_#D4AF37]'
