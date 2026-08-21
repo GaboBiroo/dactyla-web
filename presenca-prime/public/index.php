@@ -170,8 +170,14 @@ namespace {
         function data_get($target, $key, $default = null) {
             if (is_null($key)) return $target;
             foreach (explode('.', $key) as $segment) {
-                if (is_array($target) && array_key_exists($segment, $target)) {
-                    $target = $target[$segment];
+                if (is_array($target)) {
+                    if (array_key_exists($segment, $target)) {
+                        $target = $target[$segment];
+                    } else if (is_numeric($segment) && array_key_exists((int)$segment, $target)) {
+                        $target = $target[(int)$segment];
+                    } else {
+                        return $default;
+                    }
                 } else if (is_object($target) && isset($target->$segment)) {
                     $target = $target->$segment;
                 } else {

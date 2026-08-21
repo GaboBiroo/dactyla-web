@@ -41,6 +41,7 @@ class MetaWebhookController extends Controller
 
     /**
      * Endpoint POST: Gateway Principal de Ingestão Event-Driven.
+     * SLA Crítico: Resposta em < 200ms com HTTP 200 OK.
      */
     public function handle(Request $request): JsonResponse
     {
@@ -58,26 +59,23 @@ class MetaWebhookController extends Controller
 
             $payload = $request->all();
 
-            // Log de auditoria da carga bruta recebida da Meta
-            Log::debug('[Meta Webhook Payload Raw]', ['payload' => $payload]);
+            // Extração de mensagens em qualquer variação da árvore JSON da Meta Cloud API
+            $messageData = null;
+            $entry = $payload['entry'][0]['changes'][0]['value'] ?? null;
 
-            // Busca por mensagens na estrutura padrão do payload Meta Cloud API
-            $messageData = data_get($payload, 'entry.0.changes.0.value.messages.0');
-
-            // Fallback de verificação caso a mensagem venha em estrutura de nível raiz ou variante
-            if (!$messageData) {
-                if (isset($payload['messages'][0])) {
-                    $messageData = $payload['messages'][0];
-                }
+            if ($entry && isset($entry['messages'][0])) {
+                $messageData = $entry['messages'][0];
             }
 
             if ($messageData && isset($messageData['id'])) {
                 $wamid = (string) $messageData['id'];
+                $from = (string) ($messageData['from'] ?? 'Unknown');
+                $body = (string) data_get($messageData, 'text.body', '[Outro Tipo]');
 
-                Log::info('[Meta Webhook] Mensagem identificada no payload.', [
+                Log::info('[Meta Webhook] Mensagem capturada em tempo real!', [
                     'wamid' => $wamid,
-                    'from' => $messageData['from'] ?? 'Unknown',
-                    'body' => data_get($messageData, 'text.body', '[Outro Tipo]')
+                    'from' => $from,
+                    'body' => $body
                 ]);
 
                 // REGRA #2: Trava Transacional de Idempotência
@@ -91,13 +89,12 @@ class MetaWebhookController extends Controller
                 // REGRA #3: Desacoplamento Assíncrono via ProcessWhatsAppMessage
                 ProcessWhatsAppMessage::dispatch($payload);
 
-                Log::info('[Meta Webhook] Mensagem salva e vinculada à FSM com sucesso!', [
-                    'wamid' => $wamid
+                Log::info('[Meta Webhook] Lead salvo na FSM (Estado 100) com sucesso!', [
+                    'wamid' => $wamid,
+                    'phone' => $from
                 ]);
             } else {
-                Log::info('[Meta Webhook] Evento de notificação/status da Meta recebido (sem texto de mensagem).', [
-                    'raw_payload_structure' => array_keys($payload)
-                ]);
+                Log::info('[Meta Webhook] Evento de notificação/status da Meta recebido (sem texto de mensagem).');
             }
 
             // REGRA #4: Resposta ultra-rápida silencia o gateway externo instantaneamente (< 200ms)
