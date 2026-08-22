@@ -208,70 +208,81 @@ namespace {
         return new \Illuminate\Http\Response((string)$content, $status);
     }
 
-    $sqliteFile = $baseDir . '/database/database.sqlite';
-    if (!is_dir(dirname($sqliteFile))) {
-        @mkdir(dirname($sqliteFile), 0777, true);
-    }
-    if (!file_exists($sqliteFile)) {
-        @touch($sqliteFile);
-    }
+    try {
+        $dbConnection = getenv('DB_CONNECTION') ?: 'pgsql';
 
-    $GLOBALS['pdo'] = new \PDO('sqlite:' . $sqliteFile);
-    $GLOBALS['pdo']->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        if ($dbConnection === 'pgsql') {
+            $dbHost = getenv('DB_HOST') ?: 'db.tylnhpxleyummyzsqinc.supabase.co';
+            $dbPort = getenv('DB_PORT') ?: '5432';
+            $dbName = getenv('DB_DATABASE') ?: 'postgres';
+            $dbUser = getenv('DB_USERNAME') ?: 'postgres';
+            $dbPass = getenv('DB_PASSWORD') ?: 'Matheusfuturopadre1-';
+            
+            $dbUrl = getenv('DB_URL');
+            if ($dbUrl) {
+                $parsed = parse_url($dbUrl);
+                if ($parsed) {
+                    $dbHost = $parsed['host'] ?? $dbHost;
+                    $dbPort = (string) ($parsed['port'] ?? $dbPort);
+                    $dbUser = $parsed['user'] ?? $dbUser;
+                    $dbPass = $parsed['pass'] ?? $dbPass;
+                    $dbName = ltrim($parsed['path'] ?? $dbName, '/');
+                }
+            }
+            
+            $dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName};sslmode=require";
+            $GLOBALS['pdo'] = new \PDO($dsn, $dbUser, $dbPass, [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+        } else {
+            $sqliteFile = $baseDir . '/database/database.sqlite';
+            if (!is_dir(dirname($sqliteFile))) {
+                @mkdir(dirname($sqliteFile), 0777, true);
+            }
+            if (!file_exists($sqliteFile)) {
+                @touch($sqliteFile);
+            }
 
-    $GLOBALS['pdo']->exec("
-        CREATE TABLE IF NOT EXISTS leads (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            phone_number TEXT UNIQUE NOT NULL,
-            name TEXT,
-            current_state INTEGER DEFAULT 100,
-            is_bot_active INTEGER DEFAULT 1,
-            metadata TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            lead_id INTEGER,
-            wamid TEXT UNIQUE NOT NULL,
-            direction TEXT,
-            status TEXT DEFAULT 'queued_for_processing',
-            content TEXT,
-            raw_payload TEXT,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    ");
+            $GLOBALS['pdo'] = new \PDO('sqlite:' . $sqliteFile);
+            $GLOBALS['pdo']->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        }
+    } catch (\Throwable $e) {
+        \App\Support\CustomLog::critical("[DB CONNECT ERR] " . $e->getMessage());
+    }
 
     if (php_sapi_name() === 'cli' && empty($_SERVER['REQUEST_URI'])) {
         return;
     }
 
-    $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    try {
+        $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-    \App\Support\CustomLog::info("[HTTP Request Entry] {$method} {$uri}", [
-        'query' => $_GET,
-        'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
-        'hmac_header' => $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? 'MISSING'
-    ]);
+        \App\Support\CustomLog::info("[HTTP Request Entry] {$method} {$uri}", [
+            'query' => $_GET,
+            'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+            'hmac_header' => $_SERVER['HTTP_X_HUB_SIGNATURE_256'] ?? 'MISSING'
+        ]);
 
-    $request = new \Illuminate\Http\Request();
-    $controller = new \App\Http\Controllers\Webhook\MetaWebhookController();
+        $request = new \Illuminate\Http\Request();
+        $controller = new \App\Http\Controllers\Webhook\MetaWebhookController();
 
-    if ($method === 'GET' && ($uri === '/api/webhook/meta' || $uri === '/webhook/meta')) {
-        $res = $controller->verify($request);
-        $res->send();
-        exit;
+        if ($method === 'GET' && ($uri === '/api/webhook/meta' || $uri === '/webhook/meta')) {
+            $res = $controller->verify($request);
+            $res->send();
+            exit;
+        }
+
+        if ($method === 'POST' && ($uri === '/api/webhook/meta' || $uri === '/webhook/meta')) {
+            $res = $controller->handle($request);
+            $res->send();
+            exit;
+        }
+
+        \App\Support\CustomLog::warning("[HTTP 404] Rota não encontrada: {$method} {$uri}");
+        http_response_code(404);
+        echo json_encode(['error' => 'Endpoint not found', 'uri' => $uri]);
+    } catch (\Throwable $e) {
+        \App\Support\CustomLog::critical("[HTTP SERVER ERROR] " . $e->getMessage() . "\n" . $e->getTraceAsString());
+        http_response_code(500);
+        echo json_encode(['error' => 'Internal Server Error', 'details' => $e->getMessage()]);
     }
-
-    if ($method === 'POST' && ($uri === '/api/webhook/meta' || $uri === '/webhook/meta')) {
-        $res = $controller->handle($request);
-        $res->send();
-        exit;
-    }
-
-    \App\Support\CustomLog::warning("[HTTP 404] Rota não encontrada: {$method} {$uri}");
-    http_response_code(404);
-    echo json_encode(['error' => 'Endpoint not found', 'uri' => $uri]);
 }

@@ -1,46 +1,158 @@
 #!/usr/bin/env php
 <?php
 
+declare(strict_types=1);
+
 define('LARAVEL_START', microtime(true));
 
-$args = $argv;
-array_shift($args); // remove script name
+$baseDir = __DIR__;
 
-$command = $args[0] ?? 'help';
+// Carregar variáveis de ambiente do .env
+if (file_exists($baseDir . '/.env')) {
+    $lines = file($baseDir . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if (strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($name, $value) = explode('=', $line, 2);
+            $name = trim($name);
+            $value = trim($value, " \t\n\r\0\x0B\"'");
+            putenv("{$name}={$value}");
+            $_ENV[$name] = $value;
+        }
+    }
+}
+
+// Conectar ao Supabase PostgreSQL ou SQLite conforme .env
+$dbConnection = getenv('DB_CONNECTION') ?: 'pgsql';
+
+if ($dbConnection === 'pgsql') {
+    $dbHost = getenv('DB_HOST') ?: 'db.tylnhpxleyummyzsqinc.supabase.co';
+    $dbPort = getenv('DB_PORT') ?: '5432';
+    $dbName = getenv('DB_DATABASE') ?: 'postgres';
+    $dbUser = getenv('DB_USERNAME') ?: 'postgres';
+    $dbPass = getenv('DB_PASSWORD') ?: 'Matheusfuturopadre1-';
+    
+    // Suporte ao formato DB_URL caso esteja configurado no .env
+    $dbUrl = getenv('DB_URL');
+    if ($dbUrl) {
+        $parsed = parse_url($dbUrl);
+        if ($parsed) {
+            $dbHost = $parsed['host'] ?? $dbHost;
+            $dbPort = (string) ($parsed['port'] ?? $dbPort);
+            $dbUser = $parsed['user'] ?? $dbUser;
+            $dbPass = $parsed['pass'] ?? $dbPass;
+            $dbName = ltrim($parsed['path'] ?? $dbName, '/');
+        }
+    }
+    
+    $dsn = "pgsql:host={$dbHost};port={$dbPort};dbname={$dbName};sslmode=require";
+    $pdo = new PDO($dsn, $dbUser, $dbPass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+} else {
+    $sqliteFile = $baseDir . '/database/database.sqlite';
+    $pdo = new PDO('sqlite:' . $sqliteFile);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+}
+
+$args = $argv;
+array_shift($args); // remove nome do script
+
+$command = $args[0] ?? 'list';
+$isForce = in_array('--force', $args);
+
+if ($command === 'migrate:fresh' || $command === 'migrate' || $command === 'migrate:reset') {
+    echo "\n  \033[32;1mINFO\033[0m  Executando Migração de Banco de Dados FSM na Nuvem [\033[1mSupabase PostgreSQL 17.6\033[0m].\n\n";
+
+    if ($command === 'migrate:fresh') {
+        echo "  \033[33;1mDropping all tables on Supabase PostgreSQL...\033[0m\n";
+        $pdo->exec("DROP TABLE IF EXISTS messages CASCADE; DROP TABLE IF EXISTS leads CASCADE; DROP TABLE IF EXISTS migrations CASCADE;");
+        echo "  \033[32m✔\033[0m Dropped all tables successfully.\n\n";
+    }
+
+    echo "  \033[33;1mRunning FSM Migrations on Supabase PostgreSQL...\033[0m\n";
+
+    // 1. Tabela de Migrações
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS migrations (
+            id SERIAL PRIMARY KEY,
+            migration VARCHAR(255) NOT NULL,
+            batch INT NOT NULL
+        );
+    ");
+
+    // 2. Migration: 2026_08_20_000001_create_leads_table
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS leads (
+            id BIGSERIAL PRIMARY KEY,
+            phone_number VARCHAR(255) UNIQUE NOT NULL,
+            name VARCHAR(255) NULL,
+            current_state INT NOT NULL DEFAULT 100,
+            is_bot_active BOOLEAN NOT NULL DEFAULT TRUE,
+            metadata JSONB NULL,
+            created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS leads_current_state_index ON leads(current_state);
+        COMMENT ON COLUMN leads.current_state IS 'FSM State: 100=NEW_LEAD, 200=AI_QUALIFICATION, 300=FORM_PENDING, 400=HUMAN_HANDOFF';
+    ");
+    echo "  \033[32m2026_08_20_000001_create_leads_table\033[0m .................................................... \033[32;1mDONE\033[0m\n";
+
+    // 3. Migration: 2026_08_20_000002_create_messages_table
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS messages (
+            id BIGSERIAL PRIMARY KEY,
+            lead_id BIGINT NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+            wamid VARCHAR(255) UNIQUE NOT NULL,
+            direction VARCHAR(50) NOT NULL CHECK (direction IN ('inbound', 'outbound')),
+            status VARCHAR(50) NOT NULL DEFAULT 'queued_for_processing',
+            content TEXT NULL,
+            raw_payload JSONB NULL,
+            created_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP(0) WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+        COMMENT ON COLUMN messages.wamid IS 'WhatsApp Message ID único fornecido pela Meta Cloud API (Trava de Idempotência)';
+    ");
+    echo "  \033[32m2026_08_20_000002_create_messages_table\033[0m ................................................. \033[32;1mDONE\033[0m\n";
+
+    // Registrar batch de migrações
+    $pdo->exec("
+        INSERT INTO migrations (migration, batch) VALUES 
+        ('2026_08_20_000001_create_leads_table', 1),
+        ('2026_08_20_000002_create_messages_table', 1);
+    ");
+
+    echo "\n  \033[32;1mSUCCESS\033[0m  Todas as migrations da FSM foram sincronizadas no Supabase PostgreSQL com sucesso.\n\n";
+    exit(0);
+}
 
 if ($command === 'serve') {
     $port = 8000;
-    foreach ($args as $idx => $arg) {
+    foreach ($args as $arg) {
         if (strpos($arg, '--port=') === 0) {
             $port = (int) substr($arg, 7);
         }
     }
-    
-    echo "\n  \033[32mINFO\033[0m  Dactyla Presença Prime Webhook Gateway Server running on [\033[1mhttp://127.0.0.1:{$port}\033[0m].\n\n";
-    echo "  Press Ctrl+C to stop the server\n\n";
-    
-    passthru("php -S 127.0.0.1:{$port} -t public public/index.php");
+    echo "\n  \033[32mINFO\033[0m  Dactyla Presença Prime Gateway Server running on [\033[1mhttp://127.0.0.1:{$port}\033[0m].\n\n";
+    passthru("php -S 127.0.0.1:{$port} public/index.php");
     exit(0);
 }
 
 if ($command === 'tinker' || $command === 'db:show') {
-    $baseDir = __DIR__;
-    $sqliteFile = $baseDir . '/database/database.sqlite';
-    if (!file_exists($sqliteFile)) {
-        echo "Banco de dados SQLite ainda não foi criado.\n";
-        exit(1);
-    }
-    $pdo = new PDO('sqlite:' . $sqliteFile);
-    echo "=== ULTIMOS LEADS NA FSM (database.sqlite) ===\n";
+    echo "=== LEADS NA FSM (SUPABASE POSTGRESQL) ===\n";
     $stmt = $pdo->query("SELECT * FROM leads ORDER BY id DESC LIMIT 5");
-    $leads = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    print_r($leads);
+    print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
     
-    echo "=== ULTIMAS MENSAGENS E WAMID ===\n";
+    echo "=== MENSAGENS E WAMID (SUPABASE POSTGRESQL) ===\n";
     $stmt = $pdo->query("SELECT id, lead_id, wamid, direction, status, content, created_at FROM messages ORDER BY id DESC LIMIT 5");
-    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    print_r($messages);
+    print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
     exit(0);
 }
 
-echo "Dactyla Code CLI v1.0.0\nComandos disponíveis:\n  php artisan serve --port=8000\n  php artisan tinker\n";
+// Fallback para comandos padrão do Laravel
+if (file_exists(__DIR__ . '/vendor/autoload.php') && file_exists(__DIR__ . '/bootstrap/app.php')) {
+    require __DIR__ . '/vendor/autoload.php';
+    (require_once __DIR__ . '/bootstrap/app.php')->handleCommand(new \Symfony\Component\Console\Input\ArgvInput);
+    exit(0);
+}
+
+echo "Laravel Command Line Interface\n\nComandos disponíveis:\n  php artisan migrate:fresh --force\n  php artisan migrate\n  php artisan serve --port=8000\n  php artisan tinker\n";
