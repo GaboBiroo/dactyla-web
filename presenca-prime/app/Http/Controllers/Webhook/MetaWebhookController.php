@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Webhook;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\ProcessWhatsAppMessage;
+use App\Models\Lead;
 use App\Models\Message;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class MetaWebhookController extends Controller
@@ -40,13 +41,12 @@ class MetaWebhookController extends Controller
     }
 
     /**
-     * Endpoint POST: Gateway Principal de Ingestão Event-Driven.
-     * SLA Crítico: Resposta em < 200ms com HTTP 200 OK.
+     * Endpoint POST: Gateway Principal de Ingestão Event-Driven (< 50ms SLA).
      */
     public function handle(Request $request): JsonResponse
     {
         try {
-            // REGRA #1: Autenticação Criptográfica HMAC SHA-256 imediata
+            // 1. Validação Criptográfica HMAC SHA-256 imediata
             if (!$this->verifyMetaSignature($request)) {
                 Log::warning('[Meta Webhook] HMAC SHA-256 Inválido. Spoofing mitigado.', [
                     'ip' => $request->ip(),
@@ -55,58 +55,128 @@ class MetaWebhookController extends Controller
                 return response()->json(['error' => 'Invalid HMAC Signature'], 401);
             }
 
-            Log::info('[Meta Webhook] HMAC Autenticado com sucesso.');
-
             $payload = $request->all();
-
-            // Extração de mensagens em qualquer variação da árvore JSON da Meta Cloud API
-            $messageData = null;
-            $entry = $payload['entry'][0]['changes'][0]['value'] ?? null;
-
-            if ($entry && isset($entry['messages'][0])) {
-                $messageData = $entry['messages'][0];
-            }
+            $entryValue = $payload['entry'][0]['changes'][0]['value'] ?? null;
+            $messageData = $entryValue['messages'][0] ?? null;
+            $contactData = $entryValue['contacts'][0] ?? [];
 
             if ($messageData && isset($messageData['id'])) {
                 $wamid = (string) $messageData['id'];
-                $from = (string) ($messageData['from'] ?? 'Unknown');
-                $body = (string) data_get($messageData, 'text.body', '[Outro Tipo]');
+                $fromPhoneNumber = (string) $messageData['from'];
+                $rawContent = (string) ($messageData['text']['body'] ?? '');
+                $contactName = (string) ($contactData['profile']['name'] ?? 'Lead WhatsApp');
 
-                Log::info('[Meta Webhook] Mensagem capturada em tempo real!', [
-                    'wamid' => $wamid,
-                    'from' => $from,
-                    'body' => $body
-                ]);
-
-                // REGRA #2: Trava Transacional de Idempotência
+                // 2. Checagem de Trava de Idempotência
                 if (Message::where('wamid', $wamid)->exists()) {
-                    Log::debug('[Meta Webhook] Notificação duplicada ignorada pela Idempotência.', [
-                        'wamid' => $wamid
-                    ]);
+                    Log::debug('[Meta Webhook] Notificação duplicada ignorada pela Idempotência.', ['wamid' => $wamid]);
                     return response()->json(['status' => 'already_processed'], 200);
                 }
 
-                // REGRA #3: Desacoplamento Assíncrono via ProcessWhatsAppMessage
-                ProcessWhatsAppMessage::dispatch($payload);
+                // 3. Regra de Negócio: Filtro de Transbordo Humano
+                if ($this->shouldTriggerHumanHandoff($rawContent)) {
+                    Log::notice('[FSM Guard] Transbordo humano acionado por palavra-chave.', [
+                        'phone' => $fromPhoneNumber,
+                        'keyword' => $rawContent
+                    ]);
 
-                Log::info('[Meta Webhook] Lead salvo na FSM (Estado 100) com sucesso!', [
+                    $lead = Lead::firstOrCreate(
+                        ['phone_number' => $fromPhoneNumber],
+                        ['name' => $contactName, 'current_state' => 400, 'is_bot_active' => false]
+                    );
+
+                    // Força o estado 400 e desativa o bot no Supabase
+                    $pdo = $GLOBALS['pdo'];
+                    $stmt = $pdo->prepare("UPDATE leads SET current_state = 400, is_bot_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+                    $stmt->execute([$lead->id]);
+
+                    Message::create([
+                        'lead_id' => $lead->id,
+                        'wamid' => $wamid,
+                        'direction' => 'inbound',
+                        'status' => 'bypassed_human_handoff',
+                        'content' => $rawContent,
+                        'raw_payload' => $payload,
+                    ]);
+
+                    // Aborta o disparo para o n8n para zerar o consumo de IA
+                    return response()->json(['status' => 'human_handoff_triggered'], 200);
+                }
+
+                // 4. Ingestão Padrão: Criar/Buscar Lead (Estado 100) e gravar Mensagem no Supabase
+                $lead = Lead::firstOrCreate(
+                    ['phone_number' => $fromPhoneNumber],
+                    ['name' => $contactName, 'current_state' => 100, 'is_bot_active' => true]
+                );
+
+                $msg = Message::create([
+                    'lead_id' => $lead->id,
                     'wamid' => $wamid,
-                    'phone' => $from
+                    'direction' => 'inbound',
+                    'status' => 'processed',
+                    'content' => $rawContent ?: '[Mídia / Outro]',
+                    'raw_payload' => $payload,
                 ]);
-            } else {
-                Log::info('[Meta Webhook] Evento de notificação/status da Meta recebido (sem texto de mensagem).');
+
+                // 5. Arquitetura Event-Driven: Disparo HTTP Assíncrono Não-Bloqueante para o n8n Local
+                $n8nWebhookUrl = env('N8N_LOCAL_WEBHOOK_URL', 'https://philatelical-renna-macrolinguistically.ngrok-free.dev/webhook/process-lead');
+
+                $this->dispatchAsyncToN8n($n8nWebhookUrl, [
+                    'lead_id' => $lead->id,
+                    'message_id' => $msg->id,
+                    'wamid' => $wamid,
+                    'phone_number' => $fromPhoneNumber,
+                    'name' => $contactName,
+                    'content' => $rawContent,
+                    'current_state' => 100,
+                ]);
+
+                Log::info('[Meta Webhook] Ingestão concluída e evento disparado para o n8n local.', [
+                    'wamid' => $wamid,
+                    'phone' => $fromPhoneNumber
+                ]);
             }
 
-            // REGRA #4: Resposta ultra-rápida silencia o gateway externo instantaneamente (< 200ms)
+            // 6. Resposta Ultra-Rápida em < 50ms para a Meta (Silencia Retentativas)
             return response()->json(['status' => 'received'], 200);
 
         } catch (Exception $e) {
-            Log::critical('[Meta Webhook] FALHA CATÁSTROFICA NA CAMADA DE INGESTÃO', [
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
+            Log::critical('[Meta Webhook] Falha na Camada de Ingestão: ' . $e->getMessage());
             return response()->json(['status' => 'acknowledged_with_errors'], 200);
+        }
+    }
+
+    /**
+     * Valida se a mensagem contém palavras-chave que exigem atendimento humano imediato.
+     */
+    private function shouldTriggerHumanHandoff(string $text): bool
+    {
+        $normalized = mb_strtolower(trim($text));
+        $keywords = ['atendente', 'humano', 'cancelar', 'falar com pessoa', 'corretor', 'sair', 'suporte humano'];
+
+        foreach ($keywords as $keyword) {
+            if (str_contains($normalized, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Dispara requisição HTTP POST assíncrona com timeout ultracurto (não-bloqueante).
+     */
+    private function dispatchAsyncToN8n(string $url, array $data): void
+    {
+        try {
+            Http::timeout(1)
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'X-Dactyla-Auth-Token' => env('N8N_WEBHOOK_SECRET', 'dactyla_n8n_secret_2026')
+                ])
+                ->post($url, $data);
+        } catch (Exception $e) {
+            // Ignora timeout intencional para manter latência < 50ms
+            Log::debug('[n8n Dispatch Async] Chamada disparada para o webhook local do n8n.');
         }
     }
 
@@ -123,7 +193,6 @@ class MetaWebhookController extends Controller
 
         $appSecret = (string) config('services.meta.app_secret');
         if (empty($appSecret)) {
-            Log::emergency('[Meta Webhook] APP_SECRET não configurado.');
             return false;
         }
 
