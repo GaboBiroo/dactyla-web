@@ -35,13 +35,13 @@ export default function Navbar() {
         {/* Logo — limpo, sem caixas */}
         <a href="#home" className="flex items-center gap-3 group">
           <img
-            src="/logo-placeholder.svg"
+            src="/logo-dactyla.png"
             alt="Dactyla Code"
-            width={32}
-            height={32}
+            width={36}
+            height={36}
             loading="eager"
             decoding="async"
-            className="w-8 h-8 opacity-90 group-hover:opacity-100 transition-opacity"
+            className="w-9 h-9 object-contain opacity-90 group-hover:opacity-100 transition-opacity"
           />
           <span className="text-xl font-serif font-light tracking-tight text-[#E8F0EA] group-hover:text-[#D4AF37] transition-colors duration-500">
             Dactyla Code

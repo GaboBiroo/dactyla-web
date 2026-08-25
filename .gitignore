@@ -1,3 +1,20 @@
+# Environment variables (SECURITY & SENSITIVE KEYS)
+.env
+*.env
+.env.*
+dactyla_prospector/.env
+presenca-prime/.env
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Local Cache & Prospecting Data
+prospects_history.json
+mined_leads.json
+prospects_caraguatatuba.csv
+*.csv
+
 # Logs
 logs
 *.log
@@ -7,6 +24,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies and Build Output
 node_modules
 dist
 dist-ssr
