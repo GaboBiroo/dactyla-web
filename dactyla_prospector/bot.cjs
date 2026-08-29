@@ -1,19 +1,22 @@
 /**
  * DACTYLA CODE // AGÊNCIA DE TECNOLOGIA
  * CLOSER DE VENDAS AUTOMÁTICO DE WHATSAPP (whatsapp-web.js)
- * Extension: .cjs (CommonJS isolado de parent ES modules)
+ * Extension: .cjs (CommonJS com Persistência em Disco & Respostas Rápidas)
  */
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const https = require('https');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 // ----------------------------------------------------------------------
 // CONFIGURAÇÕES DA NUVEM E APIS
 // ----------------------------------------------------------------------
 const PROSPECTOR_API_KEY = process.env.PROSPECTOR_API_KEY || "dactyla_prospector_secret_2026";
 const CLOUD_SYNC_URL = process.env.CLOUD_SYNC_URL || "https://www.dactylacode.com.br/api/leads-sync";
+const STATE_FILE = path.join(__dirname, 'bot_user_states.json');
 
 // Cores ANSI para Terminal Corporativo
 const LOG_COLORS = {
@@ -35,9 +38,30 @@ function logEvent(status, phone, text) {
 }
 
 // ----------------------------------------------------------------------
-// MÁQUINA DE ESTADOS & MEMÓRIA DE SESSÃO
+// MÁQUINA DE ESTADOS & MEMÓRIA PERSISTENTE EM DISCO
 // ----------------------------------------------------------------------
-const userState = new Map();
+function loadPersistedStates() {
+  try {
+    if (fs.existsSync(STATE_FILE)) {
+      const data = fs.readFileSync(STATE_FILE, 'utf-8');
+      return new Map(JSON.parse(data));
+    }
+  } catch (e) {
+    console.error('Erro ao carregar estados do bot:', e);
+  }
+  return new Map();
+}
+
+function savePersistedStates(statesMap) {
+  try {
+    const arrayData = Array.from(statesMap.entries());
+    fs.writeFileSync(STATE_FILE, JSON.stringify(arrayData, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('Erro ao salvar estados do bot:', e);
+  }
+}
+
+const userState = loadPersistedStates();
 const processingUsers = new Set();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,8 +77,8 @@ function classifyIntent(text) {
     return 'REJECTION';
   }
 
-  // Objeção de Preço (ROI Focus)
-  if (/caro|preço|preco|valor|orçamento|orcamento|custa|quanto é|quanto e|dinheiro|pagar|investimento/i.test(lower)) {
+  // Objeção de Preço / Interesse em Orçamento / "mais caro"
+  if (/caro|preço|preco|valor|orçamento|orcamento|custa|quanto é|quanto e|dinheiro|pagar|investimento|fazer um site|site|comprar/i.test(lower)) {
     return 'PRICE_OBJECTION';
   }
 
@@ -63,8 +87,8 @@ function classifyIntent(text) {
     return 'TIME_OBJECTION';
   }
 
-  // Interesse / Dúvida / Resposta ao Gargalo (Tráfego / Automação / Agendamento)
-  if (/tráfego|trafego|automação|automacao|clientes|vendas|site|whatsapp|atendimento|sim|com certeza|interessante|funciona|como|oi|olá|ola|bom dia|boa tarde|boa noite/i.test(lower)) {
+  // Interesse / Dúvida / Cumprimento / Resposta ao Gargalo
+  if (/tráfego|trafego|automação|automacao|clientes|vendas|whatsapp|atendimento|sim|com certeza|interessante|funciona|como|oi|olá|ola|bom dia|boa tarde|boa noite/i.test(lower)) {
     return 'INTEREST';
   }
 
@@ -72,12 +96,12 @@ function classifyIntent(text) {
 }
 
 // ----------------------------------------------------------------------
-// 2. ALGORITMO DE DIGITAÇÃO DINÂMICA (WPM MATEMÁTICA)
+// 2. ALGORITMO DE DIGITAÇÃO DINÂMICA (WPM MATEMÁTICA RÁPIDA)
 // ----------------------------------------------------------------------
 function calculateTypingDuration(text) {
   const charCount = text ? text.length : 15;
-  const duration = Math.round(charCount * 185);
-  return Math.min(Math.max(duration, 1500), 6000);
+  const duration = Math.round(charCount * 45); // ~45ms por caractere (ágil e natural)
+  return Math.min(Math.max(duration, 1200), 3200); // Entre 1.2s e 3.2s
 }
 
 async function sendHumanizedMessage(msg, chat, text) {
@@ -204,6 +228,8 @@ client.on('message', async (msg) => {
     if (intent === 'REJECTION') {
       state.isOptedOut = true;
       userState.set(userId, state);
+      savePersistedStates(userState);
+
       logEvent('REJEIÇÃO / OPT-OUT', cleanPhone, 'Lead optou por sair do funil.');
       await sendHumanizedMessage(
         msg,
@@ -214,17 +240,22 @@ client.on('message', async (msg) => {
       return;
     }
 
-    if (intent === 'PRICE_OBJECTION') {
-      logEvent('OBJEÇÃO DE PREÇO', cleanPhone, 'Injetando argumento de ROI');
+    if (intent === 'PRICE_OBJECTION' && state.stage !== 'INIT') {
+      logEvent('OBJEÇÃO DE PREÇO / PEDIDO DE SITE', cleanPhone, 'Injetando argumento de ROI');
       await sendHumanizedMessage(
         msg,
         chat,
-        'Compreendo perfeitamente a atenção ao investimento. A nossa infraestrutura foi projetada exatamente para se pagar no primeiro mês: quando seu WhatsApp atende em 1 segundo, você recupera as vendas que hoje perde para a concorrência por demora.'
+        'Excelente! Nós desenvolvemos plataformas web e ecossistemas de alta performance sob medida para gerar caixa imediato.'
       );
       await sendHumanizedMessage(
         msg,
         chat,
-        'Vocês teriam 10 minutos nesta semana para o Gabriel te mostrar na prática como essa tecnologia gera caixa antes de você tomar qualquer decisão?'
+        'Vocês teriam 10 minutos nesta semana para o Gabriel te mostrar a arquitetura e os cases ao vivo antes de tomar qualquer decisão?'
+      );
+      await sendHumanizedMessage(
+        msg,
+        chat,
+        'Se preferir, pode travar um horário direto na agenda oficial: https://cal.com/agenciadactylacode-ddyia5/30min 📅'
       );
       processingUsers.delete(userId);
       return;
@@ -235,7 +266,7 @@ client.on('message', async (msg) => {
       await sendHumanizedMessage(
         msg,
         chat,
-        'Sem problemas! Sabemos como a rotina corporativa é corrida. Para não tomar seu tempo, você mesmo pode escolher um slot de 15 min direto na agenda do Gabriel quando estiver livre:'
+        'Sem problemas! Para não tomar seu tempo, você mesmo pode escolher um slot de 15 min direto na agenda do Gabriel quando estiver livre:'
       );
       await sendHumanizedMessage(
         msg,
@@ -249,6 +280,7 @@ client.on('message', async (msg) => {
     if (state.stage === 'INIT') {
       state.stage = 'QUALIFYING';
       userState.set(userId, state);
+      savePersistedStates(userState);
 
       logEvent('LEAD NOVO', cleanPhone, 'Iniciando Script Game Changer (Passo 1)');
 
@@ -277,9 +309,10 @@ client.on('message', async (msg) => {
     }
 
     if (state.stage === 'QUALIFYING') {
-      if (intent === 'INTEREST' || (msg.body && msg.body.length > 5)) {
+      if (intent === 'INTEREST' || intent === 'PRICE_OBJECTION' || (msg.body && msg.body.length > 5)) {
         state.stage = 'HANDOFF';
         userState.set(userId, state);
+        savePersistedStates(userState);
 
         const textSnippet = msg.body ? msg.body.slice(0, 30) : '';
         logEvent('LEAD QUALIFICADO', cleanPhone, `Resposta da dor: "${textSnippet}"`);
@@ -287,7 +320,7 @@ client.on('message', async (msg) => {
         await sendHumanizedMessage(
           msg,
           chat,
-          'Perfeito. É exatamente o tipo de gargalo que resolvemos com nossa infraestrutura. O Gabriel já vai assumir essa conversa para te mostrar a solução ao vivo.'
+          'Perfeito! É exatamente o tipo de solução de alta performance que desenvolvemos. O Gabriel já vai assumir essa conversa para te mostrar o ecossistema ao vivo.'
         );
 
         await sendHumanizedMessage(
@@ -303,10 +336,12 @@ client.on('message', async (msg) => {
       } else {
         state.unknownCount += 1;
         userState.set(userId, state);
+        savePersistedStates(userState);
 
         if (state.unknownCount >= 2) {
           state.isHumanRequired = true;
           userState.set(userId, state);
+          savePersistedStates(userState);
 
           logEvent('FALLBACK DE CRISE', cleanPhone, 'IA não entendeu 2x. Pausando bot e chamando fundadores.');
 
