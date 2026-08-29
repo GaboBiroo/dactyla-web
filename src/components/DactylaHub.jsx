@@ -113,7 +113,13 @@ export default function DactylaHub({ onBack }) {
         body: JSON.stringify(loginForm),
       });
 
-      const data = await response.json();
+      const text = await response.text();
+      let data = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (jsonErr) {
+        throw new Error('Servidor de autenticação indisponível no momento.');
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Credenciais inválidas.');
@@ -233,7 +239,7 @@ export default function DactylaHub({ onBack }) {
               <input
                 type="text"
                 required
-                placeholder="ex: gabrieldev"
+                placeholder="Digite seu usuário"
                 value={loginForm.usuario}
                 onChange={(e) => setLoginForm({ ...loginForm, usuario: e.target.value })}
                 className="w-full px-4 py-3 rounded bg-[#050706] border border-[#1A2E22] focus:border-[#EAB308] text-sm text-white focus:outline-none transition-colors"
