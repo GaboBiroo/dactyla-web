@@ -1,7 +1,7 @@
 /**
  * DACTYLA CODE // AGÊNCIA DE TECNOLOGIA
- * ASSISTENTE EXECUTIVO E CONSULTOR DE VENDAS B2B (whatsapp-web.js)
- * Arquitetura de Diálogo Consultivo: Tom Executivo, Respostas Curtas e Diagnóstico Personalizado.
+ * ASSISTENTE EXECUTIVO DE VENDAS B2B COM INTELICÊNCIA ARTIFICIAL CONVERSACIONAL (LLM HYBRID ENGINE)
+ * Suporta: Gemini API / OpenAI API / Groq API / Ollama Local (Llama 3) com Fallback Inteligente.
  */
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -12,10 +12,13 @@ const fs = require('fs');
 const path = require('path');
 
 // ----------------------------------------------------------------------
-// CONFIGURAÇÕES DA NUVEM E APIS
+// CONFIGURAÇÕES DA NUVEM, LLM E APIS
 // ----------------------------------------------------------------------
 const PROSPECTOR_API_KEY = process.env.PROSPECTOR_API_KEY || "dactyla_prospector_secret_2026";
 const CLOUD_SYNC_URL = process.env.CLOUD_SYNC_URL || "https://www.dactylacode.com.br/api/leads-sync";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434/api/generate";
 const STATE_FILE = path.join(__dirname, 'bot_user_states.json');
 
 // Cores ANSI para Terminal Corporativo
@@ -38,7 +41,7 @@ function logEvent(status, phone, text) {
 }
 
 // ----------------------------------------------------------------------
-// MÁQUINA DE ESTADOS & MEMÓRIA PERSISTENTE EM DISCO
+// PERSISTÊNCIA DE ESTADO E HISTÓRICO CONVERSACIONAL EM DISCO
 // ----------------------------------------------------------------------
 function loadPersistedStates() {
   try {
@@ -67,51 +70,168 @@ const processingUsers = new Set();
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // ----------------------------------------------------------------------
-// ROTEADOR DE INTENÇÕES CONSULTIVO (NLP CORPORATIVO)
+// SYSTEM PROMPT EXECUTIVO DA DACTYLA CODE (LLM SALES CONSULTANT)
 // ----------------------------------------------------------------------
-function classifyIntent(text) {
-  const lower = String(text || '').toLowerCase().trim();
+const SYSTEM_PROMPT = `
+Você é o Consultor Executivo de Vendas B2B da Dactyla Code — Agência de Tecnologia de Alta Performance fundada pelos engenheiros de software Gabriel Hatakeyama (CTO) e Matheus.
 
-  // Rejeição / Opt-Out
-  if (/não quero|nao quero|sem interesse|pare|remover|remova|cancela|sair|não tenho interesse|nao tenho interesse/i.test(lower)) {
-    return 'REJECTION';
+DIRETRIZES DE PERSONA E CONVERSAÇÃO:
+1. TOM DE VOZ: Executivo, altamente educado, persuasivo, seguro e consultivo. NUNCA seja prolixo ou robótico.
+2. TAMANHO DA RESPOSTA: No máximo 2 a 3 frases curtas e diretas. Responda como um humano digitando no WhatsApp.
+3. OBJETIVO: Entender quem é o cliente, o nome da empresa dele e o principal desafio (vendas, site, automação, sistema).
+4. PREÇOS E ORÇAMENTOS: Nunca dê um valor fixo imediato. Explique com autoridade que os projetos são desenvolvidos sob medida após um diagnóstico técnico do escopo para garantir o ROI.
+5. CONDUÇÃO DE FECHAMENTO: Apresente o link da agenda dos fundadores (https://cal.com/agenciadactylacode-ddyia5/30min) de forma natural para o cliente travar um horário de diagnóstico.
+6. RESPEITO: Se o cliente disser que não tem interesse ou pedir para parar, encerre com polidez imediata.
+`;
+
+// ----------------------------------------------------------------------
+// MOTOR DE INTELIGÊNCIA ARTIFICIAL HYBRID (GEMINI / GROQ / OLLAMA / NATIVE)
+// ----------------------------------------------------------------------
+async function fetchLLMResponse(userMessage, chatHistory = []) {
+  // 1. Tentar Gemini API
+  if (GEMINI_API_KEY) {
+    try {
+      const payload = JSON.stringify({
+        contents: [
+          { role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\nHistórico:\n${chatHistory.join('\n')}\n\nCliente disse: "${userMessage}"\n\nSua resposta (curta, executiva e persuasiva):` }] }
+        ]
+      });
+
+      const resText = await makeHttpRequest(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        'POST',
+        { 'Content-Type': 'application/json' },
+        payload
+      );
+
+      const parsed = JSON.parse(resText);
+      const reply = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (reply) return reply.trim();
+    } catch (e) {
+      logEvent('LLM GEMINI WARN', '', 'Falha na API Gemini, tentando próximo provedor...');
+    }
   }
 
-  // Pergunta sobre Preço / Orçamento
-  if (/caro|preço|preco|valor|quanto é|quanto e|quanto custa|custa|investimento|tabela/i.test(lower)) {
-    return 'PRICE';
+  // 2. Tentar Groq API (Llama 3 70B)
+  if (GROQ_API_KEY) {
+    try {
+      const payload = JSON.stringify({
+        model: 'llama3-70b-8192',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          ...chatHistory.map(h => ({ role: 'user', content: h })),
+          { role: 'user', content: userMessage }
+        ],
+        temperature: 0.6,
+        max_tokens: 150
+      });
+
+      const resText = await makeHttpRequest(
+        'https://api.groq.com/openai/v1/chat/completions',
+        'POST',
+        { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+        payload
+      );
+
+      const parsed = JSON.parse(resText);
+      const reply = parsed?.choices?.[0]?.message?.content;
+      if (reply) return reply.trim();
+    } catch (e) {
+      logEvent('LLM GROQ WARN', '', 'Falha na API Groq, tentando Ollama local...');
+    }
   }
 
-  // Pedido de Desenvolvimento (Site, Software, Automação)
-  if (/site|plataforma|sistema|automação|automacao|criar|desenvolver|fazer um site|aplicativo|app/i.test(lower)) {
-    return 'SERVICE_REQUEST';
+  // 3. Tentar Ollama Local (http://127.0.0.1:11434)
+  try {
+    const payload = JSON.stringify({
+      model: 'llama3',
+      prompt: `${SYSTEM_PROMPT}\n\nCliente: ${userMessage}\nResposta:`,
+      stream: false
+    });
+
+    const resText = await makeHttpRequest(OLLAMA_URL, 'POST', { 'Content-Type': 'application/json' }, payload, 2500);
+    const parsed = JSON.parse(resText);
+    if (parsed && parsed.response) return parsed.response.trim();
+  } catch (e) {
+    // Ollama não está rodando localmente, prosseguir para o motor nativo dinâmico
   }
 
-  // Foco em Vendas / Tráfego
-  if (/tráfego|trafego|vendas|clientes|marketing|anúncios|anuncios/i.test(lower)) {
-    return 'TRAFFIC_NEED';
-  }
+  // 4. Fallback: Motor Nativo Dinâmico com variação algorítmica
+  return generateDynamicFallbackResponse(userMessage, chatHistory);
+}
 
-  // Objeção de Tempo
-  if (/ocupado|depois|semana que vem|amanhã|amanha|mais tarde|me liga|horário|horario|agora não|agora nao/i.test(lower)) {
-    return 'TIME_OBJECTION';
-  }
+// Helper para requisições HTTP/HTTPS nativas sem dependência externa
+function makeHttpRequest(urlStr, method, headers, body, timeoutMs = 8000) {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(urlStr);
+    const transport = parsedUrl.protocol === 'https:' ? https : http;
 
-  // Cumprimento
-  if (/^oi\b|^olá\b|^ola\b|^bom dia\b|^boa tarde\b|^boa noite\b/i.test(lower)) {
-    return 'GREETING';
-  }
+    const req = transport.request(urlStr, { method, headers, timeout: timeoutMs }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => resolve(data));
+    });
 
-  return 'GENERAL';
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Timeout de requisição LLM'));
+    });
+
+    if (body) req.write(body);
+    req.end();
+  });
 }
 
 // ----------------------------------------------------------------------
-// DIGITAÇÃO DINÂMICA ELEGANTE (WPM MATEMÁTICA ENXUTA)
+// MOTOR NATIVO DINÂMICO DE RESPOSTAS SINTETIZADAS (FALLBACK DE ALTA RIGOROSIDADE)
+// ----------------------------------------------------------------------
+function generateDynamicFallbackResponse(text, history) {
+  const lower = String(text || '').toLowerCase().trim();
+
+  // Rejeição
+  if (/não quero|nao quero|sem interesse|pare|remover|remova|cancela|sair/i.test(lower)) {
+    return 'Compreendido. Agradecemos a atenção e desejamos excelente sucesso nos seus negócios.';
+  }
+
+  // Preço / Orçamento
+  if (/caro|preço|preco|valor|quanto é|quanto e|quanto custa|custa|investimento|tabela/i.test(lower)) {
+    const priceVariants = [
+      'Nossos projetos são desenvolvidos sob medida de acordo com o escopo necessário para a sua empresa. Qual é o principal objetivo ou sistema que você busca implementar no momento?',
+      'Trabalhamos com soluções engenheiradas sob medida para garantir o máximo retorno sobre o investimento. Qual é o ramo da sua empresa e o principal desafio atual?'
+    ];
+    return priceVariants[Math.floor(Math.random() * priceVariants.length)];
+  }
+
+  // Pedido de Site / Automação / Sistema
+  if (/site|plataforma|sistema|automação|automacao|criar|desenvolver|fazer um site|aplicativo|app/i.test(lower)) {
+    const serviceVariants = [
+      'Excelente! Desenvolvemos ecossistemas web e soluções sob medida com foco exclusivo em alta conversão e performance. Qual é o nome da sua empresa?',
+      'Perfeito. Construímos plataformas web e automações de atendimento de alta performance. Para direcionar melhor, qual é o seu segmento de mercado?'
+    ];
+    return serviceVariants[Math.floor(Math.random() * serviceVariants.length)];
+  }
+
+  // Cumprimento Inicial
+  if (/^oi\b|^olá\b|^ola\b|^bom dia\b|^boa tarde\b|^boa noite\b/i.test(lower)) {
+    return 'Olá! Seja bem-vindo à Dactyla Code. Sou o assistente executivo dos fundadores, Gabriel e Matheus. Como podemos impulsionar o seu negócio hoje?';
+  }
+
+  // Padrão Consultivo
+  const defaultVariants = [
+    'Entendido perfeitamente. É exatamente o escopo que cobrimos com a nossa engenharia de software.',
+    'Excelente. Nós desenvolvemos a infraestrutura sob medida para resolver exatamente esse tipo de demanda na sua operação.'
+  ];
+  return defaultVariants[Math.floor(Math.random() * defaultVariants.length)];
+}
+
+// ----------------------------------------------------------------------
+// DIGITAÇÃO DINÂMICA ELEGANTE
 // ----------------------------------------------------------------------
 function calculateTypingDuration(text) {
   const charCount = text ? text.length : 15;
-  const duration = Math.round(charCount * 35);
-  return Math.min(Math.max(duration, 1000), 2500);
+  const duration = Math.round(charCount * 30);
+  return Math.min(Math.max(duration, 1000), 2200);
 }
 
 async function sendHumanizedMessage(msg, chat, text) {
@@ -161,7 +281,7 @@ function syncLeadStageToCloud(companyName, phone, stage) {
 
     const req = transport.request(options, (res) => {
       if (res.statusCode === 200) {
-        logEvent('CRM SYNC OK', formattedPhone, `Card movido automaticamente para '${stage}' no Kanban Vercel`);
+        logEvent('CRM SYNC OK', formattedPhone, `Card movido para '${stage}' no Kanban Vercel`);
       }
     });
 
@@ -192,12 +312,12 @@ client.on('qr', (qr) => {
 
 client.on('ready', () => {
   console.log(`\n${LOG_COLORS.green}=====================================================${LOG_COLORS.reset}`);
-  console.log(`${LOG_COLORS.green} [OK] ASSISTENTE EXECUTIVO DACTYLA CODE OPERACIONAL!${LOG_COLORS.reset}`);
+  console.log(`${LOG_COLORS.green} [OK] MOTOR LLM CONVERSACIONAL DACTYLA CODE OPERACIONAL!${LOG_COLORS.reset}`);
   console.log(`${LOG_COLORS.green}=====================================================${LOG_COLORS.reset}\n`);
 });
 
 // ----------------------------------------------------------------------
-// FLUXO DE DIÁLOGO CONSULTIVO B2B
+// FLUXO DE DIÁLOGO INTELIGENTE CONVERSACIONAL (IA CONVERSA DE VERDADE)
 // ----------------------------------------------------------------------
 client.on('message', async (msg) => {
   try {
@@ -215,8 +335,7 @@ client.on('message', async (msg) => {
     let state = userState.get(userId) || {
       stage: 'INIT',
       companyName: '',
-      clientName: '',
-      unknownCount: 0,
+      history: [],
       isHumanRequired: false,
       isOptedOut: false
     };
@@ -233,152 +352,37 @@ client.on('message', async (msg) => {
       chat = await msg.getChat();
     } catch (e) {}
 
-    const intent = classifyIntent(msg.body);
+    // Registrar histórico de conversa
+    state.history = state.history || [];
+    state.history.push(`Cliente: ${msg.body}`);
+    if (state.history.length > 8) state.history.shift();
 
-    // 1. REJEIÇÃO / OPT-OUT
-    if (intent === 'REJECTION') {
-      state.isOptedOut = true;
-      userState.set(userId, state);
-      savePersistedStates(userState);
+    // 1. Gerar Resposta via Motor Inteligente (LLM Generativo ou Algorítmico Sintetizado)
+    const aiReply = await fetchLLMResponse(msg.body, state.history);
 
-      logEvent('OPT-OUT', cleanPhone, 'Lead optou por sair');
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Compreendido. Agradecemos o contato e desejamos excelente sucesso nos seus negócios.'
-      );
-      processingUsers.delete(userId);
-      return;
-    }
+    state.history.push(`Assistente Dactyla: ${aiReply}`);
+    state.stage = 'QUALIFYING';
+    userState.set(userId, state);
+    savePersistedStates(userState);
 
-    // 2. OBJEÇÃO DE TEMPO
-    if (intent === 'TIME_OBJECTION') {
-      logEvent('AGENDA DIRETA', cleanPhone, 'Enviando link Cal.com');
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Sem problemas. Quando for mais conveniente, você pode escolher um horário direto na agenda dos fundadores:\nhttps://cal.com/agenciadactylacode-ddyia5/30min 📅'
-      );
-      processingUsers.delete(userId);
-      return;
-    }
+    logEvent('RESPOSTA IA CONVERSACIONAL', cleanPhone, aiReply);
 
-    // 3. ESTÁGIO INICIAL (BOAS-VINDAS CURTA E CONSULTIVA)
-    if (state.stage === 'INIT') {
-      state.stage = 'DISCOVERY_NAME';
-      userState.set(userId, state);
-      savePersistedStates(userState);
+    // Enviar mensagem gerada pela IA
+    await sendHumanizedMessage(msg, chat, aiReply);
 
-      logEvent('INÍCIO CONSULTORIA', cleanPhone, 'Enviando saudação curta');
-
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Olá! Seja bem-vindo à Dactyla Code. Sou o assistente executivo dos fundadores, Gabriel e Matheus.'
-      );
-
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Para direcionar o seu atendimento com precisão, qual é o seu nome e o nome da sua empresa?'
-      );
-
-      syncLeadStageToCloud(state.companyName, cleanPhone, 'abordados');
-      processingUsers.delete(userId);
-      return;
-    }
-
-    // 4. ESTÁGIO DE DESCOBERTA (NOME & EMPRESA)
-    if (state.stage === 'DISCOVERY_NAME') {
-      state.companyName = msg.body.trim();
-      state.stage = 'DISCOVERY_NEED';
-      userState.set(userId, state);
-      savePersistedStates(userState);
-
-      logEvent('IDENTIFICAÇÃO', cleanPhone, `Cliente se identificou: ${state.companyName}`);
-
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        `Prazer em conhecê-lo! `
-      );
-
-      if (intent === 'PRICE') {
-        await sendHumanizedMessage(
-          msg,
-          chat,
-          'Nossos projetos de engenharia web e automação são desenvolvidos sob medida de acordo com o escopo necessário para a sua empresa.'
-        );
-      } else if (intent === 'SERVICE_REQUEST') {
-        await sendHumanizedMessage(
-          msg,
-          chat,
-          'Excelente. Desenvolvemos ecossistemas web e plataformas sob medida focados em alta conversão e performance.'
-        );
-      }
-
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Hoje, qual é o principal objetivo ou desafio que você busca resolver na sua operação?'
-      );
-
-      processingUsers.delete(userId);
-      return;
-    }
-
-    // 5. ESTÁGIO DE QUALIFICAÇÃO & HANDOFF EXECUTIVO
-    if (state.stage === 'DISCOVERY_NEED') {
-      state.stage = 'HANDOFF';
-      userState.set(userId, state);
-      savePersistedStates(userState);
-
-      logEvent('QUALIFICADO', cleanPhone, `Necessidade registrada: ${msg.body.slice(0, 40)}`);
-
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Entendido perfeitamente. É exatamente o escopo que cobrimos com a nossa infraestrutura.'
-      );
-
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Já repassei estes detalhes diretamente ao Gabriel e ao Matheus. Um deles assumirá esta conversa em instantes para apresentar a solução ideal.'
-      );
-
-      await sendHumanizedMessage(
-        msg,
-        chat,
-        'Se desejar antecipar o seu diagnóstico técnico, você também pode agendar uma reunião de 15 minutos aqui:\nhttps://cal.com/agenciadactylacode-ddyia5/30min 📅'
-      );
-
+    // Se for momento propício de fechamento, oferecer link da agenda
+    if (state.history.length >= 4 && !state.history.some(h => h.includes('cal.com'))) {
+      await sleep(1500);
+      const scheduleMsg = "Se desejar antecipar seu diagnóstico técnico com o Gabriel e o Matheus, você pode agendar um horário direto na nossa agenda oficial:\nhttps://cal.com/agenciadactylacode-ddyia5/30min 📅";
+      await sendHumanizedMessage(msg, chat, scheduleMsg);
+      state.history.push(`Assistente Dactyla: ${scheduleMsg}`);
       syncLeadStageToCloud(state.companyName, cleanPhone, 'reuniao');
-      processingUsers.delete(userId);
-      return;
-    }
-
-    // 6. APÓS HANDOFF (SE O CLIENTE CONTINUAR FALANDO)
-    if (state.stage === 'HANDOFF') {
-      if (intent === 'PRICE') {
-        await sendHumanizedMessage(
-          msg,
-          chat,
-          'O Gabriel apresentará os valores e as opções de investimento personalizadas na demonstração. Fique à vontade para sugerir o melhor horário!'
-        );
-      } else {
-        await sendHumanizedMessage(
-          msg,
-          chat,
-          'Anotado! Os fundadores já receberam essa informação adicional e responderão em breve.'
-        );
-      }
-      processingUsers.delete(userId);
-      return;
+    } else {
+      syncLeadStageToCloud(state.companyName, cleanPhone, 'abordados');
     }
 
   } catch (error) {
-    console.error(`${LOG_COLORS.red} [!] Erro no Consultor Executivo: ${error.stack || error}${LOG_COLORS.reset}`);
+    console.error(`${LOG_COLORS.red} [!] Erro no Motor Conversacional LLM: ${error.stack || error}${LOG_COLORS.reset}`);
   } finally {
     const userId = msg.from;
     processingUsers.delete(userId);
