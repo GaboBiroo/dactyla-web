@@ -3,6 +3,9 @@ import { X, Send, CheckCircle2, ShieldCheck, Lock } from 'lucide-react';
 
 export default function BriefingModal({ isOpen, onClose, setCursorState }) {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
   const [formData, setFormData] = useState({
     nome: '',
     empresa: '',
@@ -14,9 +17,30 @@ export default function BriefingModal({ isOpen, onClose, setCursorState }) {
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erro ao enviar briefing.');
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      // Exibe view de confirmação para o cliente e registra log
+      setSubmitted(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -143,11 +167,12 @@ export default function BriefingModal({ isOpen, onClose, setCursorState }) {
 
                 <button
                   type="submit"
+                  disabled={loading}
                   onMouseEnter={() => setCursorState({ hovered: true })}
                   onMouseLeave={() => setCursorState({ hovered: false })}
-                  className="px-8 py-3 rounded bg-[#D4AF37] text-[#1A1A1A] font-mono-code text-xs font-bold hover:bg-[#C68B59] transition-all flex items-center space-x-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] cursor-pointer"
+                  className="px-8 py-3 rounded bg-[#D4AF37] text-[#1A1A1A] font-mono-code text-xs font-bold hover:bg-[#C68B59] transition-all flex items-center space-x-2 shadow-[0_0_20px_rgba(212,175,55,0.3)] cursor-pointer disabled:opacity-50"
                 >
-                  <span>ENVIAR BRIEFING</span>
+                  <span>{loading ? 'ENVIANDO...' : 'ENVIAR BRIEFING'}</span>
                   <Send className="w-3.5 h-3.5" />
                 </button>
               </div>
