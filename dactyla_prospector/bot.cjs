@@ -1,6 +1,6 @@
 /**
  * DACTYLA CODE // AGÊNCIA DE TECNOLOGIA
- * ASSISTENTE EXECUTIVO DE VENDAS B2B COM INTELICÊNCIA ARTIFICIAL CONVERSACIONAL (LLM HYBRID ENGINE)
+ * ASSISTENTE EXECUTIVO DE VENDAS B2B COM INTELIGÊNCIA ARTIFICIAL CONVERSACIONAL (LLM HYBRID ENGINE)
  * Suporta: Gemini API / OpenAI API / Groq API / Ollama Local (Llama 3) com Fallback Inteligente.
  */
 
@@ -10,6 +10,24 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+
+// Carregamento manual seguro de .env
+try {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    const envLines = fs.readFileSync(envPath, 'utf-8').split('\n');
+    for (const line of envLines) {
+      const parts = line.split('=');
+      if (parts.length >= 2) {
+        const key = parts[0].trim();
+        const val = parts.slice(1).join('=').trim();
+        if (key && !process.env[key]) {
+          process.env[key] = val;
+        }
+      }
+    }
+  }
+} catch (e) {}
 
 // ----------------------------------------------------------------------
 // CONFIGURAÇÕES DA NUVEM, LLM E APIS
@@ -106,7 +124,10 @@ async function fetchLLMResponse(userMessage, chatHistory = []) {
 
       const parsed = JSON.parse(resText);
       const reply = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (reply) return reply.trim();
+      if (reply) {
+        logEvent('LLM GEMINI OK', '', 'Resposta gerada via Gemini API 1.5 Flash');
+        return reply.trim();
+      }
     } catch (e) {
       logEvent('LLM GEMINI WARN', '', 'Falha na API Gemini, tentando próximo provedor...');
     }
@@ -135,7 +156,10 @@ async function fetchLLMResponse(userMessage, chatHistory = []) {
 
       const parsed = JSON.parse(resText);
       const reply = parsed?.choices?.[0]?.message?.content;
-      if (reply) return reply.trim();
+      if (reply) {
+        logEvent('LLM GROQ OK', '', 'Resposta gerada via Groq Llama 3 70B');
+        return reply.trim();
+      }
     } catch (e) {
       logEvent('LLM GROQ WARN', '', 'Falha na API Groq, tentando Ollama local...');
     }
@@ -149,14 +173,18 @@ async function fetchLLMResponse(userMessage, chatHistory = []) {
       stream: false
     });
 
-    const resText = await makeHttpRequest(OLLAMA_URL, 'POST', { 'Content-Type': 'application/json' }, payload, 2500);
+    const resText = await makeHttpRequest(OLLAMA_URL, 'POST', { 'Content-Type': 'application/json' }, payload, 2000);
     const parsed = JSON.parse(resText);
-    if (parsed && parsed.response) return parsed.response.trim();
+    if (parsed && parsed.response) {
+      logEvent('LLM OLLAMA OK', '', 'Resposta gerada via Ollama Local');
+      return parsed.response.trim();
+    }
   } catch (e) {
-    // Ollama não está rodando localmente, prosseguir para o motor nativo dinâmico
+    // Ollama não está ativo
   }
 
   // 4. Fallback: Motor Nativo Dinâmico com variação algorítmica
+  logEvent('LLM SYNTHESIS', '', 'Sintetizando resposta executiva avançada...');
   return generateDynamicFallbackResponse(userMessage, chatHistory);
 }
 
@@ -184,7 +212,7 @@ function makeHttpRequest(urlStr, method, headers, body, timeoutMs = 8000) {
 }
 
 // ----------------------------------------------------------------------
-// MOTOR NATIVO DINÂMICO DE RESPOSTAS SINTETIZADAS (FALLBACK DE ALTA RIGOROSIDADE)
+// MOTOR NATIVO DINÂMICO DE RESPOSTAS SINTETIZADAS (MULTIDIMENSIONAL)
 // ----------------------------------------------------------------------
 function generateDynamicFallbackResponse(text, history) {
   const lower = String(text || '').toLowerCase().trim();
@@ -198,7 +226,7 @@ function generateDynamicFallbackResponse(text, history) {
   if (/caro|preço|preco|valor|quanto é|quanto e|quanto custa|custa|investimento|tabela/i.test(lower)) {
     const priceVariants = [
       'Nossos projetos são desenvolvidos sob medida de acordo com o escopo necessário para a sua empresa. Qual é o principal objetivo ou sistema que você busca implementar no momento?',
-      'Trabalhamos com soluções engenheiradas sob medida para garantir o máximo retorno sobre o investimento. Qual é o ramo da sua empresa e o principal desafio atual?'
+      'Trabalhamos com soluções engenheiradas sob medida para garantir o máximo retorno sobre o investimento. Qual é a sua empresa e o principal desafio atual?'
     ];
     return priceVariants[Math.floor(Math.random() * priceVariants.length)];
   }
@@ -317,7 +345,7 @@ client.on('ready', () => {
 });
 
 // ----------------------------------------------------------------------
-// FLUXO DE DIÁLOGO INTELIGENTE CONVERSACIONAL (IA CONVERSA DE VERDADE)
+// FLUXO DE DIÁLOGO INTELIGENTE CONVERSACIONAL
 // ----------------------------------------------------------------------
 client.on('message', async (msg) => {
   try {
@@ -352,12 +380,10 @@ client.on('message', async (msg) => {
       chat = await msg.getChat();
     } catch (e) {}
 
-    // Registrar histórico de conversa
     state.history = state.history || [];
     state.history.push(`Cliente: ${msg.body}`);
     if (state.history.length > 8) state.history.shift();
 
-    // 1. Gerar Resposta via Motor Inteligente (LLM Generativo ou Algorítmico Sintetizado)
     const aiReply = await fetchLLMResponse(msg.body, state.history);
 
     state.history.push(`Assistente Dactyla: ${aiReply}`);
@@ -367,10 +393,8 @@ client.on('message', async (msg) => {
 
     logEvent('RESPOSTA IA CONVERSACIONAL', cleanPhone, aiReply);
 
-    // Enviar mensagem gerada pela IA
     await sendHumanizedMessage(msg, chat, aiReply);
 
-    // Se for momento propício de fechamento, oferecer link da agenda
     if (state.history.length >= 4 && !state.history.some(h => h.includes('cal.com'))) {
       await sleep(1500);
       const scheduleMsg = "Se desejar antecipar seu diagnóstico técnico com o Gabriel e o Matheus, você pode agendar um horário direto na nossa agenda oficial:\nhttps://cal.com/agenciadactylacode-ddyia5/30min 📅";
