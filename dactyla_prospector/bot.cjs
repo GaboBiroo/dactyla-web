@@ -64,7 +64,7 @@ function classifyIntent(text) {
   }
 
   // Interesse / Dúvida / Resposta ao Gargalo (Tráfego / Automação / Agendamento)
-  if (/tráfego|trafego|automação|automacao|clientes|vendas|site|whatsapp|atendimento|sim|com certeza|interessante|funciona|como/i.test(lower)) {
+  if (/tráfego|trafego|automação|automacao|clientes|vendas|site|whatsapp|atendimento|sim|com certeza|interessante|funciona|como|oi|olá|ola|bom dia|boa tarde|boa noite/i.test(lower)) {
     return 'INTEREST';
   }
 
@@ -77,14 +77,18 @@ function classifyIntent(text) {
 function calculateTypingDuration(text) {
   const charCount = text ? text.length : 15;
   const duration = Math.round(charCount * 185);
-  return Math.min(Math.max(duration, 1800), 7500);
+  return Math.min(Math.max(duration, 1500), 6000);
 }
 
-async function sendHumanizedMessage(chat, text) {
+async function sendHumanizedMessage(msg, chat, text) {
   const duration = calculateTypingDuration(text);
-  await chat.sendStateTyping();
+  if (chat && typeof chat.sendStateTyping === 'function') {
+    try {
+      await chat.sendStateTyping();
+    } catch (e) {}
+  }
   await sleep(duration);
-  await chat.sendMessage(text);
+  await client.sendMessage(msg.from, text);
 }
 
 // ----------------------------------------------------------------------
@@ -171,6 +175,8 @@ client.on('message', async (msg) => {
     const userId = msg.from;
     const cleanPhone = userId.replace(/\D/g, '');
 
+    logEvent('MENSAGEM RECEBIDA', cleanPhone, msg.body || '');
+
     if (processingUsers.has(userId)) return;
 
     let state = userState.get(userId) || {
@@ -187,7 +193,12 @@ client.on('message', async (msg) => {
     }
 
     processingUsers.add(userId);
-    const chat = await msg.getChat();
+    
+    let chat = null;
+    try {
+      chat = await msg.getChat();
+    } catch (e) {}
+
     const intent = classifyIntent(msg.body);
 
     if (intent === 'REJECTION') {
@@ -195,6 +206,7 @@ client.on('message', async (msg) => {
       userState.set(userId, state);
       logEvent('REJEIÇÃO / OPT-OUT', cleanPhone, 'Lead optou por sair do funil.');
       await sendHumanizedMessage(
+        msg,
         chat,
         'Entendido perfeitamente! Agradeço a atenção e desejamos muito sucesso nos seus negócios.'
       );
@@ -205,10 +217,12 @@ client.on('message', async (msg) => {
     if (intent === 'PRICE_OBJECTION') {
       logEvent('OBJEÇÃO DE PREÇO', cleanPhone, 'Injetando argumento de ROI');
       await sendHumanizedMessage(
+        msg,
         chat,
         'Compreendo perfeitamente a atenção ao investimento. A nossa infraestrutura foi projetada exatamente para se pagar no primeiro mês: quando seu WhatsApp atende em 1 segundo, você recupera as vendas que hoje perde para a concorrência por demora.'
       );
       await sendHumanizedMessage(
+        msg,
         chat,
         'Vocês teriam 10 minutos nesta semana para o Gabriel te mostrar na prática como essa tecnologia gera caixa antes de você tomar qualquer decisão?'
       );
@@ -219,10 +233,12 @@ client.on('message', async (msg) => {
     if (intent === 'TIME_OBJECTION') {
       logEvent('OBJEÇÃO DE TEMPO', cleanPhone, 'Injetando micro-compromisso');
       await sendHumanizedMessage(
+        msg,
         chat,
         'Sem problemas! Sabemos como a rotina corporativa é corrida. Para não tomar seu tempo, você mesmo pode escolher um slot de 15 min direto na agenda do Gabriel quando estiver livre:'
       );
       await sendHumanizedMessage(
+        msg,
         chat,
         'https://cal.com/agenciadactylacode-ddyia5/30min 📅'
       );
@@ -237,16 +253,19 @@ client.on('message', async (msg) => {
       logEvent('LEAD NOVO', cleanPhone, 'Iniciando Script Game Changer (Passo 1)');
 
       await sendHumanizedMessage(
+        msg,
         chat,
         'Olá! Aqui é a Inteligência Artificial da Dactyla Code. 🚀 Confirmo que o Gabriel e o Matheus já estão cientes do seu retorno!'
       );
 
       await sendHumanizedMessage(
+        msg,
         chat,
         'Como nossa agência foca em acelerar negócios aqui na região, nós criamos ecossistemas como este que você está falando agora: robôs que atendem em 1 segundo e não deixam nenhum lead esfriar.'
       );
 
       await sendHumanizedMessage(
+        msg,
         chat,
         'Para eu já deixar tudo mastigado para os fundadores falarem com você em instantes: hoje o maior gargalo da sua empresa é trazer novos clientes (Tráfego) ou atender e converter rápido quem já chega no WhatsApp (Automação)?'
       );
@@ -266,11 +285,13 @@ client.on('message', async (msg) => {
         logEvent('LEAD QUALIFICADO', cleanPhone, `Resposta da dor: "${textSnippet}"`);
 
         await sendHumanizedMessage(
+          msg,
           chat,
           'Perfeito. É exatamente o tipo de gargalo que resolvemos com nossa infraestrutura. O Gabriel já vai assumir essa conversa para te mostrar a solução ao vivo.'
         );
 
         await sendHumanizedMessage(
+          msg,
           chat,
           'Se preferir não esperar, você já pode travar um horário direto na nossa agenda oficial aqui: https://cal.com/agenciadactylacode-ddyia5/30min 📅'
         );
@@ -290,6 +311,7 @@ client.on('message', async (msg) => {
           logEvent('FALLBACK DE CRISE', cleanPhone, 'IA não entendeu 2x. Pausando bot e chamando fundadores.');
 
           await sendHumanizedMessage(
+            msg,
             chat,
             'Para não tomar seu tempo com respostas automáticas, chamei o Gabriel e o Matheus aqui, um dos dois já te responde em 1 minuto. 🤝'
           );
@@ -300,6 +322,7 @@ client.on('message', async (msg) => {
           return;
         } else {
           await sendHumanizedMessage(
+            msg,
             chat,
             'Entendido! Vocês buscam mais volume de clientes (Tráfego) ou automação no atendimento (WhatsApp 24/7)?'
           );
@@ -310,7 +333,7 @@ client.on('message', async (msg) => {
     }
 
   } catch (error) {
-    console.error(`${LOG_COLORS.red} [!] Erro no Closer de Vendas: ${error.message}${LOG_COLORS.reset}`);
+    console.error(`${LOG_COLORS.red} [!] Erro no Closer de Vendas: ${error.stack || error}${LOG_COLORS.reset}`);
   } finally {
     const userId = msg.from;
     processingUsers.delete(userId);
