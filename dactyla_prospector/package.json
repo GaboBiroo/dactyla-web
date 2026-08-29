@@ -1,0 +1,13 @@
+{
+  "name": "dactyla-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "Bot Automático de Atendimento e Qualificação 24/7 Dactyla Code",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.26.0"
+  }
+}
