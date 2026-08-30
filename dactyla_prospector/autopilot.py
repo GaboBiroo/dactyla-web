@@ -152,10 +152,17 @@ def run_cycle():
 
 
 def main():
+    is_once = "--once" in sys.argv or "-o" in sys.argv
+
     safe_print("=" * 90)
     safe_print(" DACTYLA CODE // AUTOPILOT PROSPECTOR INITIALIZED (24/7 CONTINUOUS MODE)")
-    safe_print(" Intervalo configurado: 2 Horas (7200s)")
+    safe_print(" Modo: Execução Imediata Única (--once)" if is_once else " Modo: Loop Contínuo a Cada 2 Horas")
     safe_print("=" * 90)
+
+    if is_once:
+        run_cycle()
+        safe_print(" [OK] Rodada avulsa finalizada com sucesso!")
+        return
 
     while True:
         try:
