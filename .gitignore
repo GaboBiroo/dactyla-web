@@ -30,6 +30,13 @@ dist
 dist-ssr
 *.local
 
+# WhatsApp Auth & Cache
+.wwebjs_auth/
+.wwebjs_cache/
+dactyla_prospector/.wwebjs_auth/
+dactyla_prospector/.wwebjs_cache/
+dactyla_prospector/bot_user_states.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
