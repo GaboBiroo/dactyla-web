@@ -216,7 +216,7 @@ namespace {
             $dbPort = getenv('DB_PORT') ?: '5432';
             $dbName = getenv('DB_DATABASE') ?: 'postgres';
             $dbUser = getenv('DB_USERNAME') ?: 'postgres';
-            $dbPass = getenv('DB_PASSWORD') ?: 'Matheusfuturopadre1-';
+            $dbPass = getenv('DB_PASSWORD') ?: '';
             
             $dbUrl = getenv('DB_URL');
             if ($dbUrl) {
