@@ -184,5 +184,7 @@ def run_email_prospector():
     safe_print(f"\n [3/3] Processo do Email Bot finalizado. Total disparado nesta sessão: {dispatched_count}")
 
 
+run_cold_email_campaign = run_email_prospector
+
 if __name__ == "__main__":
     run_email_prospector()
