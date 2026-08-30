@@ -1,0 +1,62 @@
+[
+  [
+    "120363404701403742@newsletter",
+    {
+      "stage": "QUALIFYING",
+      "unknownCount": 0,
+      "isHumanRequired": false,
+      "isOptedOut": false,
+      "companyName": ""
+    }
+  ],
+  [
+    "120363404922070546@newsletter",
+    {
+      "stage": "QUALIFYING",
+      "unknownCount": 0,
+      "isHumanRequired": false,
+      "isOptedOut": false,
+      "companyName": ""
+    }
+  ],
+  [
+    "120363403279379750@newsletter",
+    {
+      "stage": "QUALIFYING",
+      "unknownCount": 0,
+      "isHumanRequired": false,
+      "isOptedOut": false,
+      "companyName": ""
+    }
+  ],
+  [
+    "165536679899348@lid",
+    {
+      "stage": "QUALIFYING",
+      "unknownCount": 0,
+      "isHumanRequired": false,
+      "isOptedOut": false,
+      "companyName": ""
+    }
+  ],
+  [
+    "202812701024402@lid",
+    {
+      "stage": "HANDOFF",
+      "unknownCount": 0,
+      "isHumanRequired": false,
+      "isOptedOut": false,
+      "companyName": ""
+    }
+  ],
+  [
+    "212893593280717@lid",
+    {
+      "stage": "QUALIFYING",
+      "unknownCount": 2,
+      "isHumanRequired": true,
+      "isOptedOut": false,
+      "companyName": ""
+    }
+  ]
+]

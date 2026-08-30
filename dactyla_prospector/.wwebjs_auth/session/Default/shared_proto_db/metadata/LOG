@@ -1,3 +1,2 @@
-2026/08/29-14:04:18.179 8860 Reusing MANIFEST C:\Users\Usuario\Desktop\Agencia de Tecnologia\dactyla_prospector\.wwebjs_auth\session\Default\shared_proto_db\metadata/MANIFEST-000001
-2026/08/29-14:04:18.192 8860 Recovering log #3
-2026/08/29-14:04:18.192 8860 Reusing old log C:\Users\Usuario\Desktop\Agencia de Tecnologia\dactyla_prospector\.wwebjs_auth\session\Default\shared_proto_db\metadata/000003.log 
+2026/08/29-15:17:49.478 8f40 Creating DB C:\Users\Usuario\Desktop\Agencia de Tecnologia\dactyla_prospector\.wwebjs_auth\session\Default\shared_proto_db\metadata since it was missing.
+2026/08/29-15:17:49.491 8f40 Reusing MANIFEST C:\Users\Usuario\Desktop\Agencia de Tecnologia\dactyla_prospector\.wwebjs_auth\session\Default\shared_proto_db\metadata/MANIFEST-000001

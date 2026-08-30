@@ -1,5 +1,87 @@
 {
   "description": "DACTYLA OMNICHANNEL PROSPECTOR // BANCO DE DADOS ANTI-SPAM DE HISTÓRICO DE ABORAGEM",
   "created_at": "2026-08-25T11:24:00Z",
-  "contacted_leads": []
+  "contacted_leads": [
+    {
+      "name": "Melhor Dentista de Caraguatatuba",
+      "phone": "551238812876",
+      "email": "contato@dentemarodontologia.com.br",
+      "website": "https://www.dentemarodontologia.com.br/melhor-dentista-de-caraguatatuba.php",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:03:35.808217"
+    },
+    {
+      "name": "Unidade Caraguatatuba",
+      "phone": "551238836503",
+      "email": "faleconosco@sorridents.com.br",
+      "website": "https://sorridents.com.br/unidade/caraguatatuba",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:04:26.978101"
+    },
+    {
+      "name": "Multiclínica Caraguá",
+      "phone": "",
+      "email": "",
+      "website": "https://multiclinicacaragua.com.br/",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:04:58.014333"
+    },
+    {
+      "name": "Radiologia Odontológica em Caraguatatuba",
+      "phone": "551238812876",
+      "email": "contato@dentemarodontologia.com.br",
+      "website": "https://www.dentemarodontologia.com.br/radiologia-odontologica-em-caraguatatuba.php",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:05:11.340776"
+    },
+    {
+      "name": "Caraguatatuba",
+      "phone": "551221323043",
+      "email": "",
+      "website": "https://valeodontologia.com.br/quem-somos/unidades/caraguatatuba/",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:05:19.127508"
+    },
+    {
+      "name": "Lis Imoveis",
+      "phone": "551238832115",
+      "email": "contato@lisimoveis.com.br",
+      "website": "https://lisimoveis.com.br/",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:05:27.145482"
+    },
+    {
+      "name": "Thiana Imóveis",
+      "phone": "551238825600",
+      "email": "adm@thianaimoveis.com.brsiga-nos",
+      "website": "https://www.thianaimoveis.com.br/",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:05:57.049055"
+    },
+    {
+      "name": "Vetorial Imóveis e Arquitetura",
+      "phone": "551238825888",
+      "email": "",
+      "website": "https://www.vetorialimoveisearquitetura.com/",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:06:25.298238"
+    },
+    {
+      "name": "Onde Comer Bem em Caraguatatuba",
+      "phone": "551238871500",
+      "email": "contato@piramideimoveissjc.com.br",
+      "website": "https://blog.piramideimoveissjc.com.br/os-melhores-restaurantes-em-caraguatatuba/",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-08-29T15:08:57.459322"
+    }
+  ]
 }
