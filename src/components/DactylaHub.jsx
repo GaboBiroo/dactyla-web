@@ -304,6 +304,10 @@ export default function DactylaHub({ onBack }) {
           <div>
             <h1 className="font-editorial text-xl font-bold text-white tracking-wide flex items-center gap-2">
               Dactyla Code <span className="text-[#EAB308] text-xs font-mono-code px-2 py-0.5 rounded bg-[#EAB308]/10 border border-[#EAB308]/30">CRM HUB v5.1 SECURE</span>
+              <span className="text-emerald-400 text-[11px] font-mono-code px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
+                Autopilot 24/7 Ativo
+              </span>
             </h1>
             <p className="text-xs text-neutral-400 font-mono-code">
               Sessão ativa: <strong className="text-white">{session.user}</strong>

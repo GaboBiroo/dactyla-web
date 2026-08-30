@@ -414,4 +414,11 @@ client.on('message', async (msg) => {
   }
 });
 
+client.on('disconnected', (reason) => {
+  logEvent('DISCONNECTED WARN', '', `WhatsApp desconectado: ${reason}. Tentando reconexão em 5 segundos...`);
+  setTimeout(() => {
+    try { client.initialize(); } catch(e) {}
+  }, 5000);
+});
+
 client.initialize();

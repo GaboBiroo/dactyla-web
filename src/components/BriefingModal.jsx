@@ -190,15 +190,25 @@ export default function BriefingModal({ isOpen, onClose, setCursorState }) {
                 O CTO da Dactyla Code analisará o perfil da <strong className="text-[#D4AF37]">{formData.empresa}</strong> nas próximas horas para agendamento de diagnóstico.
               </p>
             </div>
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                onClose();
-              }}
-              className="px-6 py-2.5 rounded border border-[#D4AF37] text-[#D4AF37] font-mono-code text-xs hover:bg-[#D4AF37] hover:text-[#1A1A1A] transition-all cursor-pointer"
-            >
-              RETORNAR AO HUB
-            </button>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href={`https://wa.me/5512992109408?text=Olá%20Gabriel!%20Acabei%20de%20enviar%20o%20briefing%20da%20minha%20empresa%20(${encodeURIComponent(formData.empresa || 'Dactyla')})%20no%20site.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2.5 rounded bg-[#25D366] text-white font-mono-code text-xs font-bold hover:bg-[#1EBE5D] transition-all cursor-pointer flex items-center gap-2 shadow-[0_0_20px_rgba(37,211,102,0.3)]"
+              >
+                💬 Falar com Gabriel no WhatsApp ➔
+              </a>
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  onClose();
+                }}
+                className="px-6 py-2.5 rounded border border-[#D4AF37] text-[#D4AF37] font-mono-code text-xs hover:bg-[#D4AF37] hover:text-[#1A1A1A] transition-all cursor-pointer"
+              >
+                RETORNAR AO SITE
+              </button>
+            </div>
           </div>
         )}
 
