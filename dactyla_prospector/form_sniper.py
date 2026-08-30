@@ -111,9 +111,24 @@ def run_form_sniper():
                             break
 
                 if contact_page_url and contact_page_url != website_url:
+                    if contact_page_url.startswith("mailto:") or contact_page_url.startswith("tel:"):
+                        safe_print(f" -> Link direto de contato ({contact_page_url.split(':')[0]}): pulando navegação de formulário.")
+                        page.close()
+                        continue
+
+                    if any(soc in contact_page_url for soc in ["facebook.com", "instagram.com", "wa.me", "whatsapp.com"]):
+                        safe_print(f" -> Link de rede social / WhatsApp: pulando navegação de formulário HTML.")
+                        page.close()
+                        continue
+
                     safe_print(f" -> Página de contato encontrada: {contact_page_url}")
-                    page.goto(contact_page_url, wait_until="domcontentloaded")
-                    time.sleep(2)
+                    try:
+                        page.goto(contact_page_url, wait_until="domcontentloaded")
+                        time.sleep(2)
+                    except Exception as nav_err:
+                        safe_print(f" [!] Erro ao navegar para a página de contato: {nav_err}")
+                        page.close()
+                        continue
 
                 form = page.query_selector("form")
                 if not form:
