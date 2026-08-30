@@ -350,6 +350,7 @@ client.on('ready', () => {
 client.on('message', async (msg) => {
   try {
     if (msg.from.endsWith('@g.us')) return;
+    if (msg.from.endsWith('@newsletter')) return;
     if (msg.from === 'status@broadcast') return;
     if (msg.fromMe) return;
 
