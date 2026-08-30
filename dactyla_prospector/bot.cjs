@@ -168,7 +168,7 @@ async function fetchLLMResponse(userMessage, chatHistory = []) {
   // 3. Tentar Ollama Local (http://127.0.0.1:11434)
   try {
     const payload = JSON.stringify({
-      model: 'llama3',
+      model: process.env.OLLAMA_MODEL || 'llama3.2:1b',
       prompt: `${SYSTEM_PROMPT}\n\nCliente: ${userMessage}\nResposta:`,
       stream: false
     });
