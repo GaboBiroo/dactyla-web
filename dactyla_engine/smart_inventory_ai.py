@@ -93,29 +93,33 @@ class SmartInventoryAI:
         }
 
 
-def run_inventory_ai_demo():
+def main():
+    import time
     print("=" * 80)
-    print(" DACTYLA ENGINE // SMART INVENTORY & TAX CLASSIFIER AI DEMO")
+    print(" DACTYLA ENGINE // SMART INVENTORY & TAX CLASSIFIER AI (24/7 CONTINUOUS DAEMON)")
     print("=" * 80)
 
-    ai = SmartInventoryAI(region="Caraguatatuba / Ubatuba")
-    
-    # 1. Teste de Auditoria Fiscal
-    print("\n [1] AUDITORIA DE REGRAS TRIBUTARIAS SEFAZ-SP:")
-    tax_audit = ai.audit_tax_classification(ncm="2203.00.00", input_cfop="5.102")
-    print(json.dumps(tax_audit, indent=2, ensure_ascii=True))
+    ai = SmartInventoryAI(region="Caraguatatuba / Ubatuba / São Sebastião / Ilhabela")
 
-    # 2. Teste de Previsão de Estoque Sazonal
-    print("\n [2] PREVISAO DE ESTOQUE PREDITIVO DE VERAO:")
-    prediction = ai.predict_coastal_seasonality_stock(
-        product_code="LEG_0004",
-        desc="Cerveja Pilsen Lata 350ml",
-        current_stock=150.0,
-        avg_daily_sales=45.0
-    )
-    print(json.dumps(prediction, indent=2, ensure_ascii=True))
-    print("=" * 80)
+    while True:
+        try:
+            print(f"\n [{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Executando ciclo de auditoria preditiva e fiscal...")
+            tax_audit = ai.audit_tax_classification(ncm="2203.00.00", input_cfop="5.102")
+            print(" [OK] Auditoria tributária concluída.")
+
+            prediction = ai.predict_coastal_seasonality_stock(
+                product_code="LEG_0004",
+                desc="Cerveja Pilsen Lata 350ml",
+                current_stock=150.0,
+                avg_daily_sales=45.0
+            )
+            print(" [OK] Projeção de estoque sazonal atualizada.")
+        except Exception as e:
+            print(f" [!] Erro no ciclo de IA: {e}")
+
+        print(" 💤 Dactyla AI em aguardo... Próximo ciclo em 1 hora.")
+        time.sleep(3600)
 
 
 if __name__ == "__main__":
-    run_inventory_ai_demo()
+    main()
