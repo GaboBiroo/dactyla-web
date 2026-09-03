@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "prepare": "husky install"
+    "prepare": "node -e \"if (!process.env.CI) { try { require('child_process').execSync('husky install'); } catch (e) {} }\" || true"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,py,md}": [
