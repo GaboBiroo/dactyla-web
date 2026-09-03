@@ -67,19 +67,7 @@ export default function DactylaHub({ onBack }) {
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.leads) && data.leads.length > 0) {
-          setLeads((prev) => {
-            const cloudMap = new Map(data.leads.map((l) => [l.empresa.toLowerCase(), l]));
-            const merged = [...prev];
-            cloudMap.forEach((cLead, name) => {
-              const idx = merged.findIndex((m) => m.empresa.toLowerCase() === name);
-              if (idx >= 0) {
-                merged[idx] = { ...cLead, stage: merged[idx].stage };
-              } else {
-                merged.push(cLead);
-              }
-            });
-            return merged.length > 0 ? merged : data.leads;
-          });
+          setLeads(data.leads);
         }
       }
     } catch (e) {
@@ -88,11 +76,9 @@ export default function DactylaHub({ onBack }) {
   };
 
   useEffect(() => {
-    if (session) {
-      fetchCloudLeads();
-      const interval = setInterval(fetchCloudLeads, 10000); // Zero-Touch Auto Sync (10s)
-      return () => clearInterval(interval);
-    }
+    fetchCloudLeads();
+    const interval = setInterval(fetchCloudLeads, 10000); // Zero-Touch Auto Sync (10s)
+    return () => clearInterval(interval);
   }, [session]);
 
   useEffect(() => {
