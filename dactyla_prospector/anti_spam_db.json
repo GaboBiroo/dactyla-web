@@ -271,6 +271,15 @@
       "channel": "form_sniper",
       "notes": "Pitch comercial de automação enviado via formulário de contato",
       "contacted_at": "2026-08-30T09:13:30.453454"
+    },
+    {
+      "name": "DN Contábil",
+      "phone": "551238822029",
+      "email": "dncontabil@dncontabil.com.brnomesobrenomeemailmensagemobrigado",
+      "website": "https://www.dncontabil.com.br/",
+      "channel": "form_sniper",
+      "notes": "Pitch comercial de automação enviado via formulário de contato",
+      "contacted_at": "2026-09-02T20:50:42.457313"
     }
   ]
 }

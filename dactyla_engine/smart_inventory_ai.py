@@ -117,7 +117,7 @@ def main():
         except Exception as e:
             print(f" [!] Erro no ciclo de IA: {e}")
 
-        print(" 💤 Dactyla AI em aguardo... Próximo ciclo em 1 hora.")
+        print(" [+] Dactyla AI em aguardo... Próximo ciclo em 1 hora.")
         time.sleep(3600)
 
 
