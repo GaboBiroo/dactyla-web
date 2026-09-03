@@ -90,6 +90,8 @@ export default function DactylaHub({ onBack }) {
   useEffect(() => {
     if (session) {
       fetchCloudLeads();
+      const interval = setInterval(fetchCloudLeads, 10000); // Zero-Touch Auto Sync (10s)
+      return () => clearInterval(interval);
     }
   }, [session]);
 
