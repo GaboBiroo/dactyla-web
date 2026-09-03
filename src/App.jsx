@@ -9,6 +9,7 @@ import BespokeEngineering from './components/BespokeEngineering';
 import EliteFooter from './components/EliteFooter';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import DactylaHub from './components/DactylaHub';
+import AuditoriaDactyla from './components/AuditoriaDactyla';
 
 export default function App() {
   const [route, setRoute] = useState(
@@ -37,6 +38,10 @@ export default function App() {
 
   if (route === '/dactyla-hub' || route === '/hub') {
     return <DactylaHub onBack={() => navigateTo('/')} />;
+  }
+
+  if (route === '/auditoria' || route === '/diagnostico') {
+    return <AuditoriaDactyla onBack={() => navigateTo('/')} />;
   }
 
   return (

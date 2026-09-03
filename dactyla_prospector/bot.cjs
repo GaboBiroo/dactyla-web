@@ -345,6 +345,36 @@ client.on('ready', () => {
 });
 
 // ----------------------------------------------------------------------
+// SYSTEM PROMPT EXECUTIVO DACTYLA DIAGNOSTIC AI (ROLE-PROMPTING + COT)
+// ----------------------------------------------------------------------
+const DIAGNOSTIC_AI_SYSTEM_PROMPT = `
+Você é o Dactyla Diagnostic AI — autoridade em Engenharia de Software B2B e Automação Comercial da Dactyla Code (Caraguatatuba/SP).
+
+Você recebeu o resultado de uma auditoria digital concluída pelo cliente no nosso site.
+
+REGRAS RÍGOROSAS DE RESPOSTA:
+1. ANÁLISE CONDICIONAL DE SCORE:
+   - Se o Score for MENOR que 50 (< 50): Aja com urgência clínica grave. Alerte que a empresa está sangrando dinheiro e perdendo cerca de 40% das vendas no WhatsApp por lentidão e falta de site. Recomende o "Nível 01: Sprint de Conversão (R$ 497)".
+   - Se o Score for MAIOR OU IGUAL a 50 (>= 50): Valide a estrutura atual da empresa, mas aponte que para escalar com segurança sem contratar mais atendentes eles precisam do "Nível 02: Presença Prime" ou "Nível 03: Ecossistema IA".
+2. REGRAS DE CONTEÚDO:
+   - NUNCA invente funcionalidades. Mantenha a resposta em no máximo 2 parágrafos curtos, diretos e executivos.
+3. FECHAMENTO MANDATÓRIO:
+   - SEMPRE termine a mensagem dizendo exatamente: "O nosso Arquiteto de Software (Gabriel Hatakeyama) já está analisando os seus dados e vai te mandar um áudio de 1 minuto em instantes com o plano técnico de correção."
+`;
+
+function parseAuditoriaTrigger(text) {
+  if (!text) return null;
+  const match = text.match(/#AUDITORIA_DACTYLA\s*\|\s*Nome:\s*([^|]+)\|\s*Path:\s*([^|]+)\|\s*Score:\s*(\d+)\/100\|\s*Resumo:\s*(.+)/i);
+  if (!match) return null;
+  return {
+    empresa: match[1].trim(),
+    path: match[2].trim(),
+    score: parseInt(match[3].trim(), 10),
+    resumo: match[4].trim()
+  };
+}
+
+// ----------------------------------------------------------------------
 // FLUXO DE DIÁLOGO INTELIGENTE CONVERSACIONAL
 // ----------------------------------------------------------------------
 client.on('message', async (msg) => {
@@ -380,6 +410,39 @@ client.on('message', async (msg) => {
     try {
       chat = await msg.getChat();
     } catch (e) {}
+
+    // Interceptador de Gatilho Inbound #AUDITORIA_DACTYLA
+    if (msg.body && msg.body.includes('#AUDITORIA_DACTYLA')) {
+      const parsedAudit = parseAuditoriaTrigger(msg.body);
+      if (parsedAudit) {
+        logEvent('INBOUND AUDITORIA DETECTADO', cleanPhone, `Empresa: ${parsedAudit.empresa} | Score: ${parsedAudit.score}/100`);
+
+        state.companyName = parsedAudit.empresa;
+        state.stage = 'QUALIFIED_INBOUND';
+
+        const promptText = `
+${DIAGNOSTIC_AI_SYSTEM_PROMPT}
+
+DADOS DA AUDITORIA RECEBIDA DO CLIENTE:
+- Nome da Empresa: ${parsedAudit.empresa}
+- Modalidade da Auditoria: ${parsedAudit.path}
+- Score de Performance: ${parsedAudit.score}/100
+- Resumo das Respostas: ${parsedAudit.resumo}
+
+Gere o diagnóstico executivo agora (máximo 2 parágrafos):`;
+
+        let diagnosticResponse = "";
+        try {
+          diagnosticResponse = await fetchLLMResponse(promptText, []);
+        } catch (e) {
+          diagnosticResponse = `Olá! Recebemos a auditoria da ${parsedAudit.empresa} com Score ${parsedAudit.score}/100.\n\nO nosso Arquiteto de Software (Gabriel Hatakeyama) já está analisando os seus dados e vai te mandar um áudio de 1 minuto em instantes com o plano técnico de correção.`;
+        }
+
+        await sendHumanizedMessage(msg, chat, diagnosticResponse);
+        syncLeadStageToCloud(parsedAudit.empresa, cleanPhone, 'abordados');
+        return;
+      }
+    }
 
     state.history = state.history || [];
     state.history.push(`Cliente: ${msg.body}`);
