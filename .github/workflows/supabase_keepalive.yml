@@ -1,0 +1,35 @@
+name: Supabase Anti-Hibernation Keep-Alive
+
+on:
+  schedule:
+    # Executa a cada 3 dias às 00:00 UTC
+    - cron: '0 0 */3 * *'
+  workflow_dispatch: # Permite disparo manual via painel do GitHub Actions
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST Endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          echo "================================================================="
+          echo " DACTYLA DEVSECOPS // SUPABASE ANTI-HIBERNATION KEEP-ALIVE PING"
+          echo "================================================================="
+          
+          TARGET_URL="${SUPABASE_URL:-https://www.dactylacode.com.br}/api/supabase-keepalive"
+          
+          echo "Disparando requisição HTTP Keep-Alive para: $TARGET_URL"
+          
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$TARGET_URL")
+          
+          echo "Resposta do servidor:"
+          echo "$RESPONSE"
+          
+          if echo "$RESPONSE" | grep -q "HTTP_STATUS:200"; then
+            echo "✅ [SUCESSO] Supabase mantido online com tráfego ativo!"
+          else
+            echo "⚠️ [AVISO] Resposta do endpoint diferente de 200, mas a requisição simulou tráfego de rede."
+          fi

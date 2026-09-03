@@ -1,47 +1,79 @@
-# Environment variables (SECURITY & SENSITIVE KEYS)
+# =========================================================================
+# DACTYLA CODE // ZERO-TRUST .GITIGNORE BLINDADO
+# Impede vazamento de segredos, chaves de API, arquivos .env e caches locais
+# =========================================================================
+
+# 1. ARQUIVOS DE AMBIENTE & SEGREDO (MANDATÓRIO)
 .env
-*.env
 .env.*
+!.env.example
+*.env
 dactyla_prospector/.env
+dactyla_prospector/.env.*
+dactyla_engine/.env
 presenca-prime/.env
+credentials.json
+client_secret*.json
+service_account*.json
+*.pem
+*.key
+*.p12
+*.crt
 
-# Python Cache
-__pycache__/
-*.pyc
-
-# Local Cache & Prospecting Data
-prospects_history.json
-mined_leads.json
-prospects_caraguatatuba.csv
+# 2. BANCOS DE DADOS E CACHES LOCAIS
+*.sqlite
+*.sqlite3
+*.fdb
+database.sqlite
+database.sqlite3
+dactyla_prospector/bot_user_states.json
+dactyla_prospector/mined_leads.json
+dactyla_prospector/prospects_history.json
+dactyla_prospector/prospects_caraguatatuba.csv
 *.csv
 
-# Logs
-logs
+# 3. WHATSAPP WEB AUTH & CACHE
+.wwebjs_auth/
+.wwebjs_cache/
+dactyla_prospector/.wwebjs_auth/
+dactyla_prospector/.wwebjs_cache/
+
+# 4. DEPENDÊNCIAS E BUILDS
+node_modules/
+dist/
+dist-ssr/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# 5. PYTHON CACHE & VIRTUALENVS
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# 6. LOGS E ARQUIVOS DE SISTEMA
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.DS_Store
+Thumbs.db
+Desktop.ini
 
-# Dependencies and Build Output
-node_modules
-dist
-dist-ssr
-*.local
-
-# WhatsApp Auth & Cache
-.wwebjs_auth/
-.wwebjs_cache/
-dactyla_prospector/.wwebjs_auth/
-dactyla_prospector/.wwebjs_cache/
-dactyla_prospector/bot_user_states.json
-
-# Editor directories and files
+# 7. CONFIGURAÇÕES LOCAIS DA IDE
+.idea/
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj

@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🛡️ Executando varredura Pre-Commit da Dactyla Code..."
+npx lint-staged

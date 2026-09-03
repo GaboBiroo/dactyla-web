@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,py,md}": [
+      "node scripts/secret-scanner.js"
+    ]
   },
   "dependencies": {
     "@calcom/embed-react": "^1.5.3",
