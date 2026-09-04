@@ -1,20 +1,28 @@
 # =========================================================================
-# DACTYLA CODE // WINDOWS NATIVE TRAY ICON (NOTIFYICON SYSTEM TRAY)
-# Cria o ÍCONE VISÍVEL NATIVO DO TAMANDUÁ na barra de tarefas do Windows (ao lado do relógio).
+# DACTYLA CODE // WINDOWS NATIVE SYSTEM TRAY MONITOR (TAMANDUÁ ICO)
+# Renderiza o Ícone do Tamanduá de verdade na Barra de Tarefas ao lado do Relógio.
 # =========================================================================
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
+$icoPath = "C:\Users\Usuario\Desktop\Agencia de Tecnologia\dactyla_prospector\tamandua.ico"
+
 # 1. Instância do NotifyIcon do Windows
 $notify = New-Object System.Windows.Forms.NotifyIcon
-$notify.Icon = [System.Drawing.SystemIcons]::Application
+
+if (Test-Path $icoPath) {
+    $notify.Icon = New-Object System.Drawing.Icon($icoPath)
+} else {
+    $notify.Icon = [System.Drawing.SystemIcons]::Application
+}
+
 $notify.BalloonTipTitle = "Dactyla Code // Mascote Tamanduá"
 $notify.BalloonTipText = "Infraestrutura B2B operando 100% online!"
 $notify.Text = "Dactyla Core // Tamanduá 🟢 Verde"
 $notify.Visible = $true
 
-# Exibe notificação de inicialização
+# Exibe notificação tipo Toast no Windows
 $notify.ShowBalloonTip(3000)
 
 # 2. Menu de Contexto (Clique com Botão Direito)
