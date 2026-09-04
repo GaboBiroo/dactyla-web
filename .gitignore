@@ -29,6 +29,7 @@ database.sqlite3
 dactyla_prospector/bot_user_states.json
 dactyla_prospector/mined_leads.json
 dactyla_prospector/prospects_history.json
+dactyla_prospector/tamandua_status.json
 dactyla_prospector/prospects_caraguatatuba.csv
 *.csv
 
