@@ -87,8 +87,36 @@ function checkHistoryCount() {
   return 0;
 }
 
+const { spawn, execSync } = require('child_process');
+
+function ensureNativeTrayIcon() {
+  if (process.platform !== 'win32') return;
+
+  try {
+    const psScript = path.join(__dirname, 'tamandua_tray_win32.ps1');
+    const checkScript = execSync(`powershell -NoProfile -Command "Get-CimInstance Win32_Process -Filter \\"Name='powershell.exe'\\" | Where-Object { $_.CommandLine -like '*tamandua_tray_win32.ps1*' } | Select-Object -ExpandProperty ProcessId"`, { encoding: 'utf-8' });
+
+    if (!checkScript.trim()) {
+      const child = spawn('powershell.exe', [
+        '-NoProfile',
+        '-ExecutionPolicy', 'Bypass',
+        '-WindowStyle', 'Hidden',
+        '-File', psScript
+      ], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+      console.log(`[TAMANDUÁ TRAY] Ícone nativo da bandeja do Windows iniciado com sucesso!`);
+    }
+  } catch (e) {
+    // Silently continue if process check fails
+  }
+}
+
 // Execução Completa da Auditoria de Saúde do Mascote Tamanduá
 async function performTamanduaHealthCheck() {
+  ensureNativeTrayIcon();
   logHeader();
 
   const ollama = await checkOllamaHealth();
