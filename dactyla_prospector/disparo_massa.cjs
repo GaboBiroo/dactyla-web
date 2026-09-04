@@ -260,20 +260,6 @@ async function forceArchiveChat(client, jid, companyName) {
   }
 }
 
-  try {
-    const rawAiResponse = await callOllamaAPI(promptText);
-    const cleanedMessage = rawAiResponse ? rawAiResponse.trim() : '';
-
-    if (cleanedMessage && !cleanedMessage.toLowerCase().includes('não posso') && !cleanedMessage.toLowerCase().includes('desculpe')) {
-      return cleanedMessage;
-    }
-  } catch (err) {
-    logMsg('AVISO IA', `Ollama indisponível (${err.message}). Acionando fallback humano...`);
-  }
-
-  return getFallbackColdMessage(companyName, bairro);
-}
-
 /**
  * Scanner de Respostas de Leads Antigos (checkPreviousReplies)
  * Desarquivamento Inteligente: Se o lead respondeu, desarquiva o chat para o topo da lista do CEO!
