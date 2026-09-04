@@ -174,7 +174,7 @@ function getFallbackColdMessage(companyName, bairro) {
   const cleanName = companyName || 'Empresa';
   const localText = bairro ? `no bairro ${bairro}` : 'aí em Caraguatatuba';
 
-  return `Opa, tudo bem? Sou o Gabriel da Dactyla Code aqui de Caraguá. Vi a ${cleanName} ${localText} e decidi mandar essa mensagem rápida.
+  return `Opa, tudo bem? Sou desenvolvedor na Dactyla Code aqui de Caraguá. Vi a ${cleanName} ${localText} e decidi mandar essa mensagem rápida.
 
 Criei uma ferramenta local e gratuita que avalia em 60 segundos se o WhatsApp da sua empresa está perdendo clientes ou demorando para responder orçamentos.
 
@@ -191,11 +191,11 @@ async function generateAiColdMessage(lead) {
   const nicho = sanitizeLLMPromptInput(lead.nicho || lead.categoria || 'comércio local');
 
   const promptText = `
-Você é o Gabriel, desenvolvedor da Dactyla Code em Caraguatatuba/SP.
+Você é um desenvolvedor da agência Dactyla Code em Caraguatatuba/SP.
 Escreva uma mensagem curta de WhatsApp (máximo 2 parágrafos) para o dono deste negócio local.
 
 REGRA 1: Diga "Opa, tudo bem?"
-REGRA 2: Mencione que você é da Dactyla Code aqui em Caraguá e notou a empresa dele localizada no bairro ${bairro}. NUNCA mencione onde você mora ou o seu endereço pessoal. Foque exclusivamente na localização da empresa do cliente.
+REGRA 2: Apresente-se apenas como um desenvolvedor da Dactyla Code em Caraguá. NUNCA cite o seu nome próprio, NUNCA cite nomes de pessoas e NUNCA mencione o seu endereço pessoal. Foque exclusivamente na localização da empresa do cliente no bairro ${bairro}.
 REGRA 3: Comente sobre a dor da empresa dele: ${dor}.
 REGRA 4: Ofereça a ferramenta gratuita (dactylacode.com.br/auditoria) para medir se ele está perdendo vendas no Zap.
 REGRA 5: Pareça um humano digitando rápido. Zero jargões computacionais complexos.
