@@ -10,6 +10,7 @@ const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const https = require('https');
 
 // Configurações Globais do Sistema
 const CEO_WHATSAPP_JID = '5512992109408@c.us'; // WhatsApp Pessoal do CEO Gabriel (12 99210-9408)
@@ -72,17 +73,55 @@ function formatPhoneToJid(phoneStr) {
   return sanitizeStrictPhoneJid(phoneStr);
 }
 
-// Carrega a base de leads minerados
-function loadMinedLeads() {
+// Carrega a base de leads minerados (Local + Cloud Sync / Hub API)
+async function loadMinedLeads() {
+  let leads = [];
+
   try {
     if (fs.existsSync(LEADS_FILE)) {
       const data = fs.readFileSync(LEADS_FILE, 'utf-8');
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) leads = parsed;
     }
   } catch (e) {
-    console.error('Erro ao carregar mined_leads.json:', e);
+    console.error('Erro ao carregar mined_leads.json:', e.message);
   }
-  return [];
+
+  // Sincroniza leads adicionais do Painel / Hub em nuvem
+  try {
+    const cloudRes = await new Promise((resolve) => {
+      const req = https.get('https://www.dactylacode.com.br/api/leads-sync', { timeout: 5000 }, (res) => {
+        let body = '';
+        res.on('data', chunk => body += chunk);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(body);
+            resolve(json.leads || []);
+          } catch (e) { resolve([]); }
+        });
+      });
+      req.on('error', () => resolve([]));
+      req.on('timeout', () => { req.destroy(); resolve([]); });
+    });
+
+    if (Array.isArray(cloudRes) && cloudRes.length > 0) {
+      logMsg('CLOUD SYNC', `${cloudRes.length} leads obtidos do Painel/Hub em nuvem.`);
+      const existingNames = new Set(leads.map(l => (l.name || l.empresa || '').toLowerCase()));
+      for (const cloudLead of cloudRes) {
+        const name = (cloudLead.empresa || cloudLead.name || '').toLowerCase();
+        if (name && !existingNames.has(name)) {
+          leads.push({
+            name: cloudLead.empresa || cloudLead.name,
+            phone: cloudLead.telefone || cloudLead.phone,
+            bairro: cloudLead.bairro || cloudLead.categoria || 'Caraguatatuba',
+            dor: cloudLead.mensagemPitch || 'demora no atendimento no WhatsApp'
+          });
+        }
+      }
+    }
+  } catch (e) {}
+
+  return leads;
 }
 
 // Chamada HTTP nativa para o Ollama Local (http://127.0.0.1:11434/api/generate)
@@ -133,9 +172,9 @@ function callOllamaAPI(promptText) {
 // Fallback de segurança humano caso o Ollama fique indisponível
 function getFallbackColdMessage(companyName, bairro) {
   const cleanName = companyName || 'Empresa';
-  const localText = bairro ? `no bairro ${bairro} aí em Caraguá` : 'aí em Caraguatatuba';
+  const localText = bairro ? `no bairro ${bairro}` : 'aí em Caraguatatuba';
 
-  return `Opa, tudo bem? Sou o Gabriel, morador aqui do bairro Pontal de Santa Marina em Caraguá. Vi a ${cleanName} ${localText} e decidi mandar essa mensagem rápida.
+  return `Opa, tudo bem? Sou o Gabriel da Dactyla Code aqui de Caraguá. Vi a ${cleanName} ${localText} e decidi mandar essa mensagem rápida.
 
 Criei uma ferramenta local e gratuita que avalia em 60 segundos se o WhatsApp da sua empresa está perdendo clientes ou demorando para responder orçamentos.
 
@@ -152,19 +191,19 @@ async function generateAiColdMessage(lead) {
   const nicho = sanitizeLLMPromptInput(lead.nicho || lead.categoria || 'comércio local');
 
   const promptText = `
-Você é o Gabriel, desenvolvedor da Dactyla Code, morador do bairro Pontal de Santa Marina em Caraguatatuba/SP.
+Você é o Gabriel, desenvolvedor da Dactyla Code em Caraguatatuba/SP.
 Escreva uma mensagem curta de WhatsApp (máximo 2 parágrafos) para o dono deste negócio local.
 
 REGRA 1: Diga "Opa, tudo bem?"
-REGRA 2: Fale que você mora em Caraguá e viu a empresa dele no bairro ${bairro}. Se não tiver bairro específico, mencione a cidade de Caraguatatuba.
-REGRA 3: Comente sobre a dor: ${dor}.
+REGRA 2: Mencione que você é da Dactyla Code aqui em Caraguá e notou a empresa dele localizada no bairro ${bairro}. NUNCA mencione onde você mora ou o seu endereço pessoal. Foque exclusivamente na localização da empresa do cliente.
+REGRA 3: Comente sobre a dor da empresa dele: ${dor}.
 REGRA 4: Ofereça a ferramenta gratuita (dactylacode.com.br/auditoria) para medir se ele está perdendo vendas no Zap.
 REGRA 5: Pareça um humano digitando rápido. Zero jargões computacionais complexos.
 
-DADOS DA EMPRESA:
-- Nome: ${companyName}
+DADOS DA EMPRESA DO CLIENTE:
+- Nome da Empresa: ${companyName}
 - Nicho: ${nicho}
-- Bairro: ${bairro}
+- Bairro da Empresa: ${bairro}
 
 Mensagem de WhatsApp:`;
 
@@ -244,7 +283,7 @@ client.on('ready', async () => {
   console.log(`${LOG_COLORS.green} [OK] CLIENTE WHATSAPP CONECTADO! INICIANDO DISPAROS COM IA...${LOG_COLORS.reset}`);
   console.log(`${LOG_COLORS.green}=====================================================${LOG_COLORS.reset}\n`);
 
-  const leads = loadMinedLeads();
+  const leads = await loadMinedLeads();
   const history = loadDisparoHistory();
 
   const totalFila = leads.length;
