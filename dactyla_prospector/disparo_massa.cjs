@@ -317,20 +317,27 @@ client.on('ready', async () => {
 
       try {
         logMsg('ENVIANDO', `Disparando mensagem para ${companyName} (${jid})...`);
-        
-        const chat = await client.getChatById(jid).catch(() => null);
-        if (chat && typeof chat.sendStateTyping === 'function') {
-          await chat.sendStateTyping();
-          await sleep(3000);
-        }
 
         // 1. Envio da mensagem no WhatsApp
-        await client.sendMessage(jid, aiMessageText);
-        
+        const sentMsg = await client.sendMessage(jid, aiMessageText);
+        await sleep(2000); // Aguarda 2s para sincronização no WhatsApp Web
+
         // 2. ARQUIVAMENTO AUTOMÁTICO PÓS-ENVIO (AUTO-ARCHIVE INBOX ZERO)
+        const chat = await client.getChatById(jid).catch(() => null);
         if (chat) {
-          await chat.archive().catch(() => {});
-          logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado para manter a interface limpa.`);
+          try {
+            await chat.archive();
+            logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado para manter a interface limpa.`);
+          } catch (archErr) {
+            try {
+              if (typeof client.archiveChat === 'function') {
+                await client.archiveChat(jid);
+                logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado via método secundário.`);
+              }
+            } catch (e) {
+              logMsg('INBOX ZERO AVISO', `Não foi possível arquivar chat de ${companyName}: ${archErr.message}`);
+            }
+          }
         }
 
         history.add(jid);
