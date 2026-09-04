@@ -36,8 +36,12 @@ dactyla_prospector/prospects_caraguatatuba.csv
 # 3. WHATSAPP WEB AUTH & CACHE
 .wwebjs_auth/
 .wwebjs_cache/
+.wwebjs_disparo_auth/
+.wwebjs_disparo_cache/
 dactyla_prospector/.wwebjs_auth/
 dactyla_prospector/.wwebjs_cache/
+dactyla_prospector/.wwebjs_disparo_auth/
+dactyla_prospector/.wwebjs_disparo_cache/
 
 # 4. DEPENDÊNCIAS E BUILDS
 node_modules/
