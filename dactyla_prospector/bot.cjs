@@ -434,8 +434,12 @@ Gere o diagnóstico executivo agora (máximo 2 parágrafos):`;
         let diagnosticResponse = "";
         try {
           diagnosticResponse = await fetchLLMResponse(promptText, []);
+          const mandatoryEnding = "O nosso Diretor Técnico (Gabriel Hatakeyama) já assumirá a linha em instantes para te passar o plano técnico de adequação.";
+          if (!diagnosticResponse.includes("Gabriel Hatakeyama")) {
+            diagnosticResponse = `${diagnosticResponse.trim()}\n\n${mandatoryEnding}`;
+          }
         } catch (e) {
-          diagnosticResponse = `Olá! Recebemos a auditoria da ${parsedAudit.empresa} com Score ${parsedAudit.score}/100.\n\nO nosso Arquiteto de Software (Gabriel Hatakeyama) já está analisando os seus dados e vai te mandar um áudio de 1 minuto em instantes com o plano técnico de correção.`;
+          diagnosticResponse = `Olá! Recebemos a auditoria da ${parsedAudit.empresa} com Score ${parsedAudit.score}/100.\n\nO nosso Diretor Técnico (Gabriel Hatakeyama) já assumirá a linha em instantes para te passar o plano técnico de adequação.`;
         }
 
         await sendHumanizedMessage(msg, chat, diagnosticResponse);
