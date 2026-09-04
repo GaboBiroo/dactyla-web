@@ -1,25 +1,29 @@
 /**
- * DACTYLA CODE // DISPARO EM MASSA ANTI-BAN B2B
- * Script autônomo em Node.js usando whatsapp-web.js para envio passivo cadenciado de cold messages.
- * Implementa pausa aleatória de 35 a 75 segundos por mensagem e histórico anti-duplicação.
+ * DACTYLA CODE // DISPARO EM MASSA OUTBOUND IA (LLAMA 3.2 OLLAMA EMBEDDED)
+ * Motor autônomo de prospecção passiva via WhatsApp com geração de copy hiperlocalizada em tempo real.
+ * Integração com whatsapp-web.js, Ollama (Llama 3.2 1B), pausa anti-ban (35s-75s) e fallback resiliente.
  */
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
+const http = require('http');
 
 // Caminhos dos arquivos de dados
 const LEADS_FILE = path.join(__dirname, 'mined_leads.json');
 const DISPARO_HISTORY_FILE = path.join(__dirname, 'disparo_history.json');
 
-// Cores ANSI para terminal corporativo
+// Cores ANSI para Terminal Corporativo
 const LOG_COLORS = {
   reset: '\x1b[0m',
   gold: '\x1b[33m',
   green: '\x1b[32m',
   cyan: '\x1b[36m',
+  magenta: '\x1b[35m',
   red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  bold: '\x1b[1m',
   gray: '\x1b[90m'
 };
 
@@ -28,7 +32,7 @@ function logMsg(status, text) {
   console.log(`${LOG_COLORS.gray}[${time}]${LOG_COLORS.reset} ${LOG_COLORS.gold}[${status}]${LOG_COLORS.reset} ${text}`);
 }
 
-// Utilitário para gerar tempo aleatório de pausa anti-ban (entre 35 e 75 segundos)
+// Utilitário de pausa aleatória anti-ban entre 35 e 75 segundos
 function getRandomDelayMs(minSec = 35, maxSec = 75) {
   const minMs = minSec * 1000;
   const maxMs = maxSec * 1000;
@@ -59,7 +63,7 @@ function saveDisparoHistory(historySet) {
   }
 }
 
-// Formata e sanitiza número de telefone brasileiro para o formato MSISDN JID do WhatsApp
+// Formata e sanitiza número de telefone para o formato MSISDN JID do WhatsApp
 function formatPhoneToJid(phoneStr) {
   if (!phoneStr) return null;
   let digits = String(phoneStr).replace(/\D/g, '');
@@ -87,14 +91,102 @@ function loadMinedLeads() {
   return [];
 }
 
-// Template da Mensagem Fria focado na Auditoria Digital Gratuita
-function buildColdMessage(companyName) {
+// Chamada HTTP nativa para o Ollama Local (http://127.0.0.1:11434/api/generate)
+function callOllamaAPI(promptText) {
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({
+      model: 'llama3.2:1b',
+      prompt: promptText,
+      stream: false
+    });
+
+    const options = {
+      hostname: '127.0.0.1',
+      port: 11434,
+      path: '/api/generate',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(payload)
+      },
+      timeout: 18000
+    };
+
+    const req = http.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          resolve(json.response || data);
+        } catch (e) {
+          resolve(data);
+        }
+      });
+    });
+
+    req.on('error', (err) => reject(new Error(`Ollama API offline: ${err.message}`)));
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Timeout na resposta do Llama 3.2'));
+    });
+
+    req.write(payload);
+    req.end();
+  });
+}
+
+// Fallback de segurança humano caso o Ollama fique indisponível
+function getFallbackColdMessage(companyName, bairro) {
   const cleanName = companyName || 'Empresa';
-  return `Olá! Tudo bem? Sou o Gabriel, fundador da Dactyla Code aqui de Caraguá. Criei uma ferramenta gratuita que avalia em 60 segundos a velocidade do atendimento e a presença digital das empresas locais.
+  const localText = bairro ? `no bairro ${bairro} aí em Caraguá` : 'aí em Caraguatatuaba';
 
-Fiz um diagnóstico prévio da ${cleanName} e notei alguns pontos que podem estar fazendo vocês perderem clientes para concorrentes no Google.
+  return `Opa, tudo bem? Sou o Gabriel, morador aqui do bairro Pontal de Santa Marina em Caraguá. Vi a ${cleanName} ${localText} e decidi mandar essa mensagem rápida.
 
-Posso te mandar o link gratuito da ferramenta para você ver a pontuação da sua empresa?`;
+Criei uma ferramenta local e gratuita que avalia em 60 segundos se o WhatsApp da sua empresa está perdendo clientes ou demorando para responder orçamentos.
+
+Você pode testar a pontuação da sua empresa direto pelo link: dactylacode.com.br/auditoria
+
+Se precisar de qualquer apoio técnico, estou por aqui!`;
+}
+
+// Gerador de Mensagem com Llama 3.2 1B + Fallback Resiliente
+async function generateAiColdMessage(lead) {
+  const companyName = lead.name || lead.empresa || 'Empresa Local';
+  const bairro = lead.bairro || lead.bairro_nome || lead.neighborhood || 'Caraguatatuba';
+  const dor = lead.dor || lead.gargalo || 'demora no atendimento no WhatsApp e perda de clientes para concorrentes';
+  const nicho = lead.nicho || lead.categoria || 'comércio local';
+
+  const promptText = `
+Você é o Gabriel, desenvolvedor da Dactyla Code, morador do bairro Pontal de Santa Marina em Caraguatatuba/SP.
+Escreva uma mensagem curta de WhatsApp (máximo 2 parágrafos) para o dono deste negócio local.
+
+REGRA 1: Diga "Opa, tudo bem?"
+REGRA 2: Fale que você mora em Caraguá e viu a empresa dele no bairro ${bairro}. Se não tiver bairro específico, mencione a cidade de Caraguatatuba.
+REGRA 3: Comente sobre a dor: ${dor}.
+REGRA 4: Ofereça a ferramenta gratuita (dactylacode.com.br/auditoria) para medir se ele está perdendo vendas no Zap.
+REGRA 5: Pareça um humano digitando rápido. Zero jargões computacionais complexos.
+
+DADOS DA EMPRESA:
+- Nome: ${companyName}
+- Nicho: ${nicho}
+- Bairro: ${bairro}
+
+Mensagem de WhatsApp:`;
+
+  try {
+    const rawAiResponse = await callOllamaAPI(promptText);
+    const cleanedMessage = rawAiResponse ? rawAiResponse.trim() : '';
+
+    // Valida se a IA não gerou recusas de filtro
+    if (cleanedMessage && !cleanedMessage.toLowerCase().includes('não posso') && !cleanedMessage.toLowerCase().includes('desculpe')) {
+      return cleanedMessage;
+    }
+  } catch (err) {
+    logMsg('AVISO IA', `Ollama indisponível (${err.message}). Acionando fallback humano...`);
+  }
+
+  return getFallbackColdMessage(companyName, bairro);
 }
 
 // Inicialização do WhatsApp Web
@@ -109,14 +201,14 @@ const client = new Client({
 client.on('qr', (qr) => {
   console.clear();
   console.log(`${LOG_COLORS.gold}=====================================================${LOG_COLORS.reset}`);
-  console.log(`${LOG_COLORS.gold}   DACTYLA CODE // DISPARO EM MASSA ANTI-BAN JID${LOG_COLORS.reset}`);
+  console.log(`${LOG_COLORS.gold} DACTYLA CODE // DISPARO OUTBOUND IA (LLAMA 3.2) ${LOG_COLORS.reset}`);
   console.log(`${LOG_COLORS.gold}=====================================================${LOG_COLORS.reset}\n`);
   qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', async () => {
   console.log(`\n${LOG_COLORS.green}=====================================================${LOG_COLORS.reset}`);
-  console.log(`${LOG_COLORS.green} [OK] CLIENTE WHATSAPP PRONTO! INICIANDO MOTOR ANTI-BAN...${LOG_COLORS.reset}`);
+  console.log(`${LOG_COLORS.green} [OK] CLIENTE WHATSAPP CONECTADO! INICIANDO DISPAROS COM IA...${LOG_COLORS.reset}`);
   console.log(`${LOG_COLORS.green}=====================================================${LOG_COLORS.reset}\n`);
 
   const leads = loadMinedLeads();
@@ -147,10 +239,11 @@ client.on('ready', async () => {
       continue;
     }
 
-    const messageText = buildColdMessage(companyName);
+    logMsg('GERANDO IA', `[${i + 1}/${leads.length}] Gerando copy hiperlocal para ${companyName}...`);
+    const aiMessageText = await generateAiColdMessage(lead);
 
     try {
-      logMsg('ENVIANDO', `[${i + 1}/${leads.length}] Disparando para ${companyName} (${jid})...`);
+      logMsg('ENVIANDO', `Disparando mensagem para ${companyName} (${jid})...`);
       
       // Simula digitação humana antes de enviar
       const chat = await client.getChatById(jid).catch(() => null);
@@ -159,18 +252,19 @@ client.on('ready', async () => {
         await sleep(3000);
       }
 
-      await client.sendMessage(jid, messageText);
+      await client.sendMessage(jid, aiMessageText);
       
       history.add(jid);
       saveDisparoHistory(history);
       sentCount++;
 
-      logMsg('SUCESSO', `[✅] Mensagem enviada para ${companyName}!`);
+      logMsg('SUCESSO', `[✅] Mensagem com IA enviada para ${companyName}!`);
+      console.log(`${LOG_COLORS.cyan}💬 Mensagem enviada:\n"${aiMessageText.substring(0, 120)}..."${LOG_COLORS.reset}\n`);
 
       // Pausa estrita anti-ban entre 35 e 75 segundos
       const delayMs = getRandomDelayMs(35, 75);
       const delaySec = Math.round(delayMs / 1000);
-      logMsg('PAUSA ANTI-BAN', `Aguardando ${delaySec} segundos antes do próximo disparo para simular comportamento humano...\n`);
+      logMsg('PAUSA ANTI-BAN', `Aguardando ${delaySec}s antes do próximo disparo para simular comportamento humano...\n`);
       await sleep(delayMs);
 
     } catch (err) {
@@ -178,7 +272,7 @@ client.on('ready', async () => {
     }
   }
 
-  logMsg('CONCLUÍDO', `Campanha de disparo em massa finalizada. Total enviado nesta sessão: ${sentCount}`);
+  logMsg('CONCLUÍDO', `Campanha de disparo outbound com IA finalizada. Total enviado nesta sessão: ${sentCount}`);
   process.exit(0);
 });
 
