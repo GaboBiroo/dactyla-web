@@ -1,7 +1,8 @@
 /**
- * DACTYLA CODE // DISPARO EM MASSA OUTBOUND IA (LLAMA 3.2 + RELATÓRIO DO CEO)
- * Motor autônomo de prospecção passiva via WhatsApp com geração de copy hiperlocalizada em tempo real.
- * Inclui auditoria de respostas de leads antigos e notificação executiva enviada direto para o CEO (12 99210-9408).
+ * DACTYLA CODE // DISPARO EM MASSA OUTBOUND IA + INBOX ZERO ARCHITECTURE
+ * Motor autônomo de prospecção passiva via WhatsApp com geração de copy hiperlocalizada em tempo real (Llama 3.2).
+ * Inclui arquivamento pós-envio (Auto-Archive), desarquivamento inteligente no scanner de respostas, 
+ * e envio do relatório executivo de ciclo para o WhatsApp pessoal do CEO (12 99210-9408).
  */
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -191,7 +192,7 @@ Mensagem de WhatsApp:`;
 
 /**
  * Scanner de Respostas de Leads Antigos (checkPreviousReplies)
- * Varre todos os JIDs do histórico do disparo e conta quantos enviaram resposta humana.
+ * Desarquivamento Inteligente: Se o lead respondeu, desarquiva o chat para o topo da lista do CEO!
  */
 async function checkPreviousReplies(client, historySet) {
   logMsg('AUDITORIA', 'Iniciando varredura no histórico de chats para identificar respostas de leads...');
@@ -206,16 +207,22 @@ async function checkPreviousReplies(client, historySet) {
       const chat = await client.getChatById(jid).catch(() => null);
       if (!chat) continue;
 
-      // Checa mensagens não lidas ou se a última mensagem do chat veio do lead (não do bot)
       const hasUnread = chat.unreadCount > 0;
       const lastMsgFromLead = chat.lastMessage && !chat.lastMessage.fromMe;
 
       if (hasUnread || lastMsgFromLead) {
         replyCount++;
-        logMsg('RESPOSTA DETECTADA', `Lead (${jid}) respondeu no chat! Aguardando CEO.`);
+        
+        // DESARQUIVAMENTO INTELIGENTE (INBOX ZERO RECOVERY)
+        if (chat.isArchived) {
+          await chat.unarchive().catch(() => {});
+          logMsg('INBOX ZERO RECOVERY', `[🔓] Chat com ${jid} desarquivado e movido para a caixa de entrada prioritária do CEO!`);
+        } else {
+          logMsg('RESPOSTA DETECTADA', `[📩] Chat com ${jid} possui resposta pendente do cliente.`);
+        }
       }
     } catch (e) {
-      // Ignora falhas em chats específicos
+      // Ignora falhas pontuais de chat
     }
   }
 
@@ -225,7 +232,7 @@ async function checkPreviousReplies(client, historySet) {
 
 // Inicialização do WhatsApp Web
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: './.wwebjs_disparo_auth' }),
+  authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '.wwebjs_disparo_auth') }),
   puppeteer: {
     headless: true,
     args: ['--disable-dev-shm-usage', '--no-sandbox']
@@ -235,7 +242,7 @@ const client = new Client({
 client.on('qr', (qr) => {
   console.clear();
   console.log(`${LOG_COLORS.gold}=====================================================${LOG_COLORS.reset}`);
-  console.log(`${LOG_COLORS.gold} DACTYLA CODE // DISPARO OUTBOUND IA (LLAMA 3.2) ${LOG_COLORS.reset}`);
+  console.log(`${LOG_COLORS.gold} DACTYLA CODE // DISPARO OUTBOUND IA (INBOX ZERO) ${LOG_COLORS.reset}`);
   console.log(`${LOG_COLORS.gold}=====================================================${LOG_COLORS.reset}\n`);
   qrcode.generate(qr, { small: true });
 });
@@ -286,13 +293,20 @@ client.on('ready', async () => {
           await sleep(3000);
         }
 
+        // 1. Envio da mensagem no WhatsApp
         await client.sendMessage(jid, aiMessageText);
         
+        // 2. ARQUIVAMENTO AUTOMÁTICO PÓS-ENVIO (AUTO-ARCHIVE INBOX ZERO)
+        if (chat) {
+          await chat.archive().catch(() => {});
+          logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado para manter a interface limpa.`);
+        }
+
         history.add(jid);
         saveDisparoHistory(history);
         sucessoCount++;
 
-        logMsg('SUCESSO', `[✅] Mensagem com IA enviada para ${companyName}!`);
+        logMsg('SUCESSO', `[✅] Mensagem enviada e chat arquivado com sucesso para ${companyName}!`);
         console.log(`${LOG_COLORS.cyan}💬 Mensagem enviada:\n"${aiMessageText.substring(0, 120)}..."${LOG_COLORS.reset}\n`);
 
         // Pausa estrita anti-ban entre 35 e 75 segundos
@@ -309,7 +323,7 @@ client.on('ready', async () => {
   }
 
   // ------------------------------------------------------------------
-  // FASE DE NOTIFICAÇÃO E MONITORAMENTO PARA O CEO (+55 12 99210-9408)
+  // FASE DE MONITORAMENTO E NOTIFICAÇÃO DO CEO (+55 12 99210-9408)
   // ------------------------------------------------------------------
   logMsg('MONITORAMENTO', 'Fila finalizada. Executando scanner de respostas no histórico...');
   const qntRespostas = await checkPreviousReplies(client, history);
