@@ -102,10 +102,13 @@ DIRETRIZES DE PERSONA E CONVERSAÇÃO:
 6. RESPEITO: Se o cliente disser que não tem interesse ou pedir para parar, encerre com polidez imediata.
 `;
 
+const { sanitizeLLMPromptInput } = require('./security_sanitizer.cjs');
+
 // ----------------------------------------------------------------------
 // MOTOR DE INTELIGÊNCIA ARTIFICIAL HYBRID (GEMINI / GROQ / OLLAMA / NATIVE)
 // ----------------------------------------------------------------------
-async function fetchLLMResponse(userMessage, chatHistory = []) {
+async function fetchLLMResponse(rawUserMessage, chatHistory = []) {
+  const userMessage = sanitizeLLMPromptInput(rawUserMessage);
   // 1. Tentar Gemini API
   if (GEMINI_API_KEY) {
     try {

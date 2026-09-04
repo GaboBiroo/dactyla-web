@@ -3,7 +3,14 @@ const INTERNAL_API_KEY = process.env.PROSPECTOR_API_KEY || "dactyla_prospector_s
 
 function sanitizeString(str) {
   if (!str) return '';
-  return String(str).replace(/</g, '&lt;').replace(/>/g, '&gt;').trim();
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;')
+    .trim();
 }
 
 function sanitizeWaLink(url, phone) {

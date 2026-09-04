@@ -65,19 +65,11 @@ function saveDisparoHistory(historySet) {
   }
 }
 
+const { sanitizeLLMPromptInput, sanitizeStrictPhoneJid } = require('./security_sanitizer.cjs');
+
 // Formata número de telefone para o formato MSISDN JID do WhatsApp
 function formatPhoneToJid(phoneStr) {
-  if (!phoneStr) return null;
-  let digits = String(phoneStr).replace(/\D/g, '');
-  
-  if (digits.startsWith('0')) digits = digits.substring(1);
-  if (digits.length in [8, 9]) digits = '12' + digits; // DDD 12 Caraguá
-  if (digits.length in [10, 11] && !digits.startsWith('55')) digits = '55' + digits;
-
-  if (digits.length >= 12 && digits.length <= 13) {
-    return `${digits}@c.us`;
-  }
-  return null;
+  return sanitizeStrictPhoneJid(phoneStr);
 }
 
 // Carrega a base de leads minerados
@@ -154,10 +146,10 @@ Se precisar de qualquer apoio técnico, estou por aqui!`;
 
 // Gerador de Mensagem com Llama 3.2 1B + Fallback Resiliente
 async function generateAiColdMessage(lead) {
-  const companyName = lead.name || lead.empresa || 'Empresa Local';
-  const bairro = lead.bairro || lead.bairro_nome || lead.neighborhood || 'Caraguatatuba';
-  const dor = lead.dor || lead.gargalo || 'demora no atendimento no WhatsApp e perda de clientes para concorrentes';
-  const nicho = lead.nicho || lead.categoria || 'comércio local';
+  const companyName = sanitizeLLMPromptInput(lead.name || lead.empresa || 'Empresa Local');
+  const bairro = sanitizeLLMPromptInput(lead.bairro || lead.bairro_nome || lead.neighborhood || 'Caraguatatuba');
+  const dor = sanitizeLLMPromptInput(lead.dor || lead.gargalo || 'demora no atendimento no WhatsApp e perda de clientes para concorrentes');
+  const nicho = sanitizeLLMPromptInput(lead.nicho || lead.categoria || 'comércio local');
 
   const promptText = `
 Você é o Gabriel, desenvolvedor da Dactyla Code, morador do bairro Pontal de Santa Marina em Caraguatatuba/SP.
