@@ -16,6 +16,7 @@ const https = require('https');
 const CEO_WHATSAPP_JID = '5512992109408@c.us'; // WhatsApp Pessoal do CEO Gabriel (12 99210-9408)
 const LEADS_FILE = path.join(__dirname, 'mined_leads.json');
 const DISPARO_HISTORY_FILE = path.join(__dirname, 'disparo_history.json');
+const MAX_DISPAROS_POR_CICLO = parseInt(process.env.MAX_DISPAROS_POR_CICLO || '15', 10); // Trava de segurança anti-ban para chip de 2 semanas (15 disparos/ciclo)
 
 // Cores ANSI para Terminal Corporativo
 const LOG_COLORS = {
@@ -296,6 +297,11 @@ client.on('ready', async () => {
     logMsg('INÍCIO', `Total de leads na fila: ${totalFila} | Já disparados anteriormente: ${history.size}`);
 
     for (let i = 0; i < leads.length; i++) {
+      if (sucessoCount >= MAX_DISPAROS_POR_CICLO) {
+        logMsg('RAMP-UP SAFETY', `[🛡️] Limite de segurança (${MAX_DISPAROS_POR_CICLO} disparos/ciclo) atingido para proteger a reputação do chip. Pausando até o próximo ciclo.`);
+        break;
+      }
+
       const lead = leads[i];
       const rawPhone = lead.phone || lead.telefone;
       const jid = formatPhoneToJid(rawPhone);
