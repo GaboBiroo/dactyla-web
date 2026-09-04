@@ -1,7 +1,7 @@
 /**
- * DACTYLA CODE // DISPARO EM MASSA OUTBOUND IA (LLAMA 3.2 OLLAMA EMBEDDED)
+ * DACTYLA CODE // DISPARO EM MASSA OUTBOUND IA (LLAMA 3.2 + RELATÓRIO DO CEO)
  * Motor autônomo de prospecção passiva via WhatsApp com geração de copy hiperlocalizada em tempo real.
- * Integração com whatsapp-web.js, Ollama (Llama 3.2 1B), pausa anti-ban (35s-75s) e fallback resiliente.
+ * Inclui auditoria de respostas de leads antigos e notificação executiva enviada direto para o CEO (12 99210-9408).
  */
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -10,7 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-// Caminhos dos arquivos de dados
+// Configurações Globais do Sistema
+const CEO_WHATSAPP_JID = '5512992109408@c.us'; // WhatsApp Pessoal do CEO Gabriel (12 99210-9408)
 const LEADS_FILE = path.join(__dirname, 'mined_leads.json');
 const DISPARO_HISTORY_FILE = path.join(__dirname, 'disparo_history.json');
 
@@ -41,7 +42,7 @@ function getRandomDelayMs(minSec = 35, maxSec = 75) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Carrega histórico de disparos passados para impedir duplicidade
+// Carrega histórico de disparos passados
 function loadDisparoHistory() {
   try {
     if (fs.existsSync(DISPARO_HISTORY_FILE)) {
@@ -63,7 +64,7 @@ function saveDisparoHistory(historySet) {
   }
 }
 
-// Formata e sanitiza número de telefone para o formato MSISDN JID do WhatsApp
+// Formata número de telefone para o formato MSISDN JID do WhatsApp
 function formatPhoneToJid(phoneStr) {
   if (!phoneStr) return null;
   let digits = String(phoneStr).replace(/\D/g, '');
@@ -139,7 +140,7 @@ function callOllamaAPI(promptText) {
 // Fallback de segurança humano caso o Ollama fique indisponível
 function getFallbackColdMessage(companyName, bairro) {
   const cleanName = companyName || 'Empresa';
-  const localText = bairro ? `no bairro ${bairro} aí em Caraguá` : 'aí em Caraguatatuaba';
+  const localText = bairro ? `no bairro ${bairro} aí em Caraguá` : 'aí em Caraguatatuba';
 
   return `Opa, tudo bem? Sou o Gabriel, morador aqui do bairro Pontal de Santa Marina em Caraguá. Vi a ${cleanName} ${localText} e decidi mandar essa mensagem rápida.
 
@@ -178,7 +179,6 @@ Mensagem de WhatsApp:`;
     const rawAiResponse = await callOllamaAPI(promptText);
     const cleanedMessage = rawAiResponse ? rawAiResponse.trim() : '';
 
-    // Valida se a IA não gerou recusas de filtro
     if (cleanedMessage && !cleanedMessage.toLowerCase().includes('não posso') && !cleanedMessage.toLowerCase().includes('desculpe')) {
       return cleanedMessage;
     }
@@ -187,6 +187,40 @@ Mensagem de WhatsApp:`;
   }
 
   return getFallbackColdMessage(companyName, bairro);
+}
+
+/**
+ * Scanner de Respostas de Leads Antigos (checkPreviousReplies)
+ * Varre todos os JIDs do histórico do disparo e conta quantos enviaram resposta humana.
+ */
+async function checkPreviousReplies(client, historySet) {
+  logMsg('AUDITORIA', 'Iniciando varredura no histórico de chats para identificar respostas de leads...');
+  let replyCount = 0;
+  const historyArray = Array.from(historySet);
+
+  for (let i = 0; i < historyArray.length; i++) {
+    const jid = historyArray[i];
+    if (!jid || jid === CEO_WHATSAPP_JID) continue;
+
+    try {
+      const chat = await client.getChatById(jid).catch(() => null);
+      if (!chat) continue;
+
+      // Checa mensagens não lidas ou se a última mensagem do chat veio do lead (não do bot)
+      const hasUnread = chat.unreadCount > 0;
+      const lastMsgFromLead = chat.lastMessage && !chat.lastMessage.fromMe;
+
+      if (hasUnread || lastMsgFromLead) {
+        replyCount++;
+        logMsg('RESPOSTA DETECTADA', `Lead (${jid}) respondeu no chat! Aguardando CEO.`);
+      }
+    } catch (e) {
+      // Ignora falhas em chats específicos
+    }
+  }
+
+  logMsg('AUDITORIA CONCLUÍDA', `Total de leads antigos que responderam: ${replyCount}`);
+  return replyCount;
 }
 
 // Inicialização do WhatsApp Web
@@ -214,65 +248,93 @@ client.on('ready', async () => {
   const leads = loadMinedLeads();
   const history = loadDisparoHistory();
 
-  if (leads.length === 0) {
+  const totalFila = leads.length;
+  let sucessoCount = 0;
+  let erroCount = 0;
+
+  if (totalFila === 0) {
     logMsg('ALERTA', 'Nenhum lead encontrado em mined_leads.json.');
-    process.exit(0);
-  }
+  } else {
+    logMsg('INÍCIO', `Total de leads na fila: ${totalFila} | Já disparados anteriormente: ${history.size}`);
 
-  logMsg('INÍCIO', `Total de leads carregados: ${leads.length} | Já disparados: ${history.size}`);
+    for (let i = 0; i < leads.length; i++) {
+      const lead = leads[i];
+      const rawPhone = lead.phone || lead.telefone;
+      const jid = formatPhoneToJid(rawPhone);
+      const companyName = lead.name || lead.empresa || 'Empresa B2B';
 
-  let sentCount = 0;
-
-  for (let i = 0; i < leads.length; i++) {
-    const lead = leads[i];
-    const rawPhone = lead.phone || lead.telefone;
-    const jid = formatPhoneToJid(rawPhone);
-    const companyName = lead.name || lead.empresa || 'Empresa B2B';
-
-    if (!jid) {
-      logMsg('IGNORADO', `Telefone inválido para ${companyName}: ${rawPhone}`);
-      continue;
-    }
-
-    if (history.has(jid)) {
-      logMsg('DUPLICADO', `Lead ${companyName} (${jid}) já recebeu disparo anterior. Pulando.`);
-      continue;
-    }
-
-    logMsg('GERANDO IA', `[${i + 1}/${leads.length}] Gerando copy hiperlocal para ${companyName}...`);
-    const aiMessageText = await generateAiColdMessage(lead);
-
-    try {
-      logMsg('ENVIANDO', `Disparando mensagem para ${companyName} (${jid})...`);
-      
-      // Simula digitação humana antes de enviar
-      const chat = await client.getChatById(jid).catch(() => null);
-      if (chat && typeof chat.sendStateTyping === 'function') {
-        await chat.sendStateTyping();
-        await sleep(3000);
+      if (!jid) {
+        logMsg('IGNORADO', `Telefone inválido para ${companyName}: ${rawPhone}`);
+        erroCount++;
+        continue;
       }
 
-      await client.sendMessage(jid, aiMessageText);
-      
-      history.add(jid);
-      saveDisparoHistory(history);
-      sentCount++;
+      if (history.has(jid)) {
+        logMsg('DUPLICADO', `Lead ${companyName} (${jid}) já recebeu disparo anterior. Pulando.`);
+        continue;
+      }
 
-      logMsg('SUCESSO', `[✅] Mensagem com IA enviada para ${companyName}!`);
-      console.log(`${LOG_COLORS.cyan}💬 Mensagem enviada:\n"${aiMessageText.substring(0, 120)}..."${LOG_COLORS.reset}\n`);
+      logMsg('GERANDO IA', `[${i + 1}/${leads.length}] Gerando copy hiperlocal para ${companyName}...`);
+      const aiMessageText = await generateAiColdMessage(lead);
 
-      // Pausa estrita anti-ban entre 35 e 75 segundos
-      const delayMs = getRandomDelayMs(35, 75);
-      const delaySec = Math.round(delayMs / 1000);
-      logMsg('PAUSA ANTI-BAN', `Aguardando ${delaySec}s antes do próximo disparo para simular comportamento humano...\n`);
-      await sleep(delayMs);
+      try {
+        logMsg('ENVIANDO', `Disparando mensagem para ${companyName} (${jid})...`);
+        
+        const chat = await client.getChatById(jid).catch(() => null);
+        if (chat && typeof chat.sendStateTyping === 'function') {
+          await chat.sendStateTyping();
+          await sleep(3000);
+        }
 
-    } catch (err) {
-      logMsg('ERRO', `[❌] Falha no disparo para ${companyName} (${jid}): ${err.message}`);
+        await client.sendMessage(jid, aiMessageText);
+        
+        history.add(jid);
+        saveDisparoHistory(history);
+        sucessoCount++;
+
+        logMsg('SUCESSO', `[✅] Mensagem com IA enviada para ${companyName}!`);
+        console.log(`${LOG_COLORS.cyan}💬 Mensagem enviada:\n"${aiMessageText.substring(0, 120)}..."${LOG_COLORS.reset}\n`);
+
+        // Pausa estrita anti-ban entre 35 e 75 segundos
+        const delayMs = getRandomDelayMs(35, 75);
+        const delaySec = Math.round(delayMs / 1000);
+        logMsg('PAUSA ANTI-BAN', `Aguardando ${delaySec}s antes do próximo disparo para simular comportamento humano...\n`);
+        await sleep(delayMs);
+
+      } catch (err) {
+        logMsg('ERRO', `[❌] Falha no disparo para ${companyName} (${jid}): ${err.message}`);
+        erroCount++;
+      }
     }
   }
 
-  logMsg('CONCLUÍDO', `Campanha de disparo outbound com IA finalizada. Total enviado nesta sessão: ${sentCount}`);
+  // ------------------------------------------------------------------
+  // FASE DE NOTIFICAÇÃO E MONITORAMENTO PARA O CEO (+55 12 99210-9408)
+  // ------------------------------------------------------------------
+  logMsg('MONITORAMENTO', 'Fila finalizada. Executando scanner de respostas no histórico...');
+  const qntRespostas = await checkPreviousReplies(client, history);
+
+  const reportText = `🤖 Dactyla Core | Relatório de Ciclo:
+
+📦 Leads na fila: ${totalFila}
+✅ Disparos da IA: ${sucessoCount}
+❌ Erros: ${erroCount}
+
+💬 ATENÇÃO: Existem ${qntRespostas} leads de ciclos anteriores que te responderam e aguardam retorno humano!
+
+Aguardando nova extração de 2h.`;
+
+  logMsg('RELATÓRIO CEO', `Enviando relatório executivo para o CEO Gabriel (${CEO_WHATSAPP_JID})...`);
+
+  try {
+    await client.sendMessage(CEO_WHATSAPP_JID, reportText);
+    logMsg('RELATÓRIO ENTREGUE', '✅ Relatório entregue com sucesso no WhatsApp do CEO!');
+  } catch (err) {
+    logMsg('ERRO RELATÓRIO', `❌ Falha ao enviar relatório para o CEO: ${err.message}`);
+  }
+
+  logMsg('ENCERRAMENTO', 'Aguardando 3 segundos para finalização completa do ciclo...');
+  await sleep(3000);
   process.exit(0);
 });
 
