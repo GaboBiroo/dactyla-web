@@ -175,38 +175,90 @@ function getFallbackColdMessage(companyName, bairro) {
   const cleanName = companyName || 'Empresa';
   const localText = bairro ? `no bairro ${bairro}` : 'aí em Caraguatatuba';
 
-  return `Opa, tudo bem? Sou desenvolvedor na Dactyla Code aqui de Caraguá. Vi a ${cleanName} ${localText} e decidi mandar essa mensagem rápida.
+  return `Opa, tudo bem? Sou desenvolvedor aqui na Dactyla Code em Caraguá. Vi a ${cleanName} ${localText} e decidi te mandar essa mensagem rápida.
 
-Criei uma ferramenta local e gratuita que avalia em 60 segundos se o WhatsApp da sua empresa está perdendo clientes ou demorando para responder orçamentos.
+A gente desenvolve soluções de tecnologia e automações de WhatsApp sob medida para ajudar comércios da nossa cidade a atenderem os clientes mais rápido e aumentarem as vendas no dia a dia.
 
-Você pode testar a pontuação da sua empresa direto pelo link: dactylacode.com.br/auditoria
-
-Se precisar de qualquer apoio técnico, estou por aqui!`;
+Se quiser dar uma olhada em como funciona ou trocar uma ideia, dá uma conferida no nosso site: dactylacode.com.br/auditoria ou é só me mandar uma mensagem por aqui!`;
 }
 
 // Gerador de Mensagem com Llama 3.2 1B + Fallback Resiliente
 async function generateAiColdMessage(lead) {
   const companyName = sanitizeLLMPromptInput(lead.name || lead.empresa || 'Empresa Local');
   const bairro = sanitizeLLMPromptInput(lead.bairro || lead.bairro_nome || lead.neighborhood || 'Caraguatatuba');
-  const dor = sanitizeLLMPromptInput(lead.dor || lead.gargalo || 'demora no atendimento no WhatsApp e perda de clientes para concorrentes');
+  const dor = sanitizeLLMPromptInput(lead.dor || lead.gargalo || 'demora no atendimento no WhatsApp e perda de vendas para concorrentes');
   const nicho = sanitizeLLMPromptInput(lead.nicho || lead.categoria || 'comércio local');
 
   const promptText = `
 Você é um desenvolvedor da agência Dactyla Code em Caraguatatuba/SP.
-Escreva uma mensagem curta de WhatsApp (máximo 2 parágrafos) para o dono deste negócio local.
+Escreva uma mensagem de WhatsApp EXTREMAMENTE HUMANA, amigável, acolhedora e natural (máximo 2 parágrafos curtos) para o dono desta empresa local.
 
-REGRA 1: Diga "Opa, tudo bem?"
-REGRA 2: Apresente-se apenas como um desenvolvedor da Dactyla Code em Caraguá. NUNCA cite o seu nome próprio, NUNCA cite nomes de pessoas e NUNCA mencione o seu endereço pessoal. Foque exclusivamente na localização da empresa do cliente no bairro ${bairro}.
-REGRA 3: Comente sobre a dor da empresa dele: ${dor}.
-REGRA 4: Ofereça a ferramenta gratuita (dactylacode.com.br/auditoria) para medir se ele está perdendo vendas no Zap.
-REGRA 5: Pareça um humano digitando rápido. Zero jargões computacionais complexos.
+REGRAS OBRIGATÓRIAS:
+1. Comece com "Opa, tudo bem?".
+2. Fale que você é desenvolvedor da Dactyla Code aqui em Caraguá e notou a empresa dele (${companyName}) localizada no bairro ${bairro}.
+3. NÃO faça perguntas robóticas, NÃO pareça um bot de pesquisa/questionário automático e NÃO pareça uma pesquisa telemarketing.
+4. Escreva exatamente como uma pessoa real conversando amigavelmente no WhatsApp: comente que vocês desenvolvem soluções de tecnologia e automações para ajudar comércios de Caraguá a atenderem mais rápido e fecharem mais vendas.
+5. Indique o link dactylacode.com.br/auditoria de forma natural ou diga que ele pode te chamar por aqui.
+6. NUNCA cite nomes próprios de pessoas e NUNCA mencione o seu endereço pessoal.
 
-DADOS DA EMPRESA DO CLIENTE:
+DADOS DO CLIENTE LOCAL:
 - Nome da Empresa: ${companyName}
 - Nicho: ${nicho}
 - Bairro da Empresa: ${bairro}
 
-Mensagem de WhatsApp:`;
+Mensagem de WhatsApp humana:`;
+
+  try {
+    const rawAiResponse = await callOllamaAPI(promptText);
+    const cleanedMessage = rawAiResponse ? rawAiResponse.trim() : '';
+
+    if (cleanedMessage && !cleanedMessage.toLowerCase().includes('não posso') && !cleanedMessage.toLowerCase().includes('desculpe')) {
+      return cleanedMessage;
+    }
+  } catch (err) {
+    logMsg('AVISO IA', `Ollama indisponível (${err.message}). Acionando fallback humano...`);
+  }
+
+  return getFallbackColdMessage(companyName, bairro);
+}
+
+// Arquivamento Robusto Multi-Tier (Inbox Zero)
+async function forceArchiveChat(client, jid, companyName) {
+  try {
+    await sleep(2500); // Aguarda 2.5s para o WhatsApp Web sincronizar a conversa
+
+    // 1. Arquivamento via Objeto de Chat do whatsapp-web.js
+    const chat = await client.getChatById(jid).catch(() => null);
+    if (chat && typeof chat.archive === 'function') {
+      await chat.archive().catch(() => {});
+    }
+
+    // 2. Arquivamento via Método Secundário do Cliente
+    if (typeof client.archiveChat === 'function') {
+      await client.archiveChat(jid).catch(() => {});
+    }
+
+    // 3. Arquivamento via Injeção Direta no Store do Puppeteer
+    if (client.pupPage) {
+      await client.pupPage.evaluate(async (targetJid) => {
+        try {
+          const c = window.Store && window.Store.Chat && (window.Store.Chat.get(targetJid) || window.Store.Chat.find(targetJid));
+          if (c) {
+            if (window.Store.Cmd && window.Store.Cmd.archiveChat) {
+              await window.Store.Cmd.archiveChat(c, true);
+            } else if (typeof c.archive === 'function') {
+              await c.archive(true);
+            }
+          }
+        } catch (e) {}
+      }, jid).catch(() => {});
+    }
+
+    logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado com sucesso.`);
+  } catch (err) {
+    logMsg('INBOX ZERO AVISO', `Tentativa de arquivamento para ${companyName}: ${err.message}`);
+  }
+}
 
   try {
     const rawAiResponse = await callOllamaAPI(promptText);
@@ -326,25 +378,9 @@ client.on('ready', async () => {
 
         // 1. Envio da mensagem no WhatsApp
         const sentMsg = await client.sendMessage(jid, aiMessageText);
-        await sleep(2000); // Aguarda 2s para sincronização no WhatsApp Web
 
-        // 2. ARQUIVAMENTO AUTOMÁTICO PÓS-ENVIO (AUTO-ARCHIVE INBOX ZERO)
-        const chat = await client.getChatById(jid).catch(() => null);
-        if (chat) {
-          try {
-            await chat.archive();
-            logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado para manter a interface limpa.`);
-          } catch (archErr) {
-            try {
-              if (typeof client.archiveChat === 'function') {
-                await client.archiveChat(jid);
-                logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado via método secundário.`);
-              }
-            } catch (e) {
-              logMsg('INBOX ZERO AVISO', `Não foi possível arquivar chat de ${companyName}: ${archErr.message}`);
-            }
-          }
-        }
+        // 2. ARQUIVAMENTO AUTOMÁTICO MULTI-TIER PÓS-ENVIO (AUTO-ARCHIVE INBOX ZERO)
+        await forceArchiveChat(client, jid, companyName);
 
         history.add(jid);
         saveDisparoHistory(history);
