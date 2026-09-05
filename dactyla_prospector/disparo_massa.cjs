@@ -74,6 +74,20 @@ function formatPhoneToJid(phoneStr) {
   return sanitizeStrictPhoneJid(phoneStr);
 }
 
+// Valida se o número é celular (DDD 12 + 9 dígitos para Caraguá ou celular válido)
+function isMobilePhone(phoneStr) {
+  if (!phoneStr) return false;
+  const digits = String(phoneStr).replace(/\D/g, '');
+  if (digits.startsWith('5512')) {
+    return digits.length === 13 && digits.substring(4, 5) === '9';
+  }
+  if (digits.startsWith('12')) {
+    return digits.length === 11 && digits.substring(2, 3) === '9';
+  }
+  if (digits.length === 10) return false;
+  return digits.length >= 11;
+}
+
 // Carrega a base de leads minerados (Local + Cloud Sync / Hub API)
 async function loadMinedLeads() {
   let leads = [];
@@ -342,17 +356,29 @@ client.on('ready', async () => {
 
       const lead = leads[i];
       const rawPhone = lead.phone || lead.telefone;
-      const jid = formatPhoneToJid(rawPhone);
       const companyName = lead.name || lead.empresa || 'Empresa B2B';
 
+      // 1. FILTRO DE TELEFONE FIXO (IGNORA FIXOS COMERCIAIS SEM CONTABILIZAR COMO ERRO)
+      if (!isMobilePhone(rawPhone)) {
+        logMsg('FIXO IGNORADO', `[☎️] ${companyName} (${rawPhone}) é telefone fixo. Pulando sem erro.`);
+        continue;
+      }
+
+      const jid = formatPhoneToJid(rawPhone);
       if (!jid) {
         logMsg('IGNORADO', `Telefone inválido para ${companyName}: ${rawPhone}`);
-        erroCount++;
         continue;
       }
 
       if (history.has(jid)) {
         logMsg('DUPLICADO', `Lead ${companyName} (${jid}) já recebeu disparo anterior. Pulando.`);
+        continue;
+      }
+
+      // 2. CHECAGEM PRÓ-ATIVA DE CONTA NO WHATSAPP WEB
+      const isRegistered = await client.isRegisteredUser(jid).catch(() => false);
+      if (!isRegistered) {
+        logMsg('SEM WHATSAPP', `[🚫] ${companyName} (${rawPhone}) não possui conta de WhatsApp ativa. Pulando.`);
         continue;
       }
 
