@@ -110,7 +110,7 @@ export default function HeroSection() {
             >
               <span className="w-12 h-[1px] bg-[#D4AF37]" />
               <span className="text-xs uppercase tracking-[0.4em] text-[#D4AF37] font-light">
-                Engenharia de Software — Litoral Paulista
+                Engenharia de Receita &amp; Automação — Litoral Norte SP
               </span>
             </motion.div>
 
@@ -121,9 +121,9 @@ export default function HeroSection() {
               variants={fadeUp}
               className="text-4xl md:text-6xl lg:text-7xl font-serif font-light tracking-tight text-[#E8F0EA] leading-[1.08]"
             >
-              Arquitetura Digital
+              Resgate os Clientes Sumidos
               <br />
-              <em className="text-[#D4AF37] not-italic">de Elite.</em>
+              <em className="text-[#D4AF37] not-italic">do seu Balcão em 48h.</em>
             </motion.h1>
 
             <motion.p
@@ -133,8 +133,7 @@ export default function HeroSection() {
               variants={fadeUp}
               className="mt-8 text-base md:text-lg text-[#E8F0EA]/75 font-light max-w-xl leading-relaxed"
             >
-              O motor invisível do litoral paulista. Plataformas corporativas de alta 
-              disponibilidade, engenharia de precisão e infraestrutura que escala.
+              O motor invisível para Oficinas, Pet Shops e Barbearias de Caraguatatuba. Conectamos no seu próprio WhatsApp atual, reativamos clientes inativos de forma 100% humana e lotamos sua terça e quarta-feira — sem parecer robô.
             </motion.p>
 
             <motion.div
@@ -142,19 +141,19 @@ export default function HeroSection() {
               initial="hidden"
               animate="visible"
               variants={fadeUp}
-              className="mt-10 flex items-center gap-6"
+              className="mt-10 flex flex-wrap items-center gap-6"
             >
               <a
                 href="#pacotes"
                 className="inline-block px-8 py-3.5 bg-[#D4AF37] text-[#0A140E] text-sm font-medium tracking-wide rounded-sm hover:bg-[#E8F0EA] transition-colors duration-500 transform-gpu"
               >
-                Ver Pacotes
+                Testar 48h com Risco Zero
               </a>
               <a
-                href="#diretoria"
-                className="text-sm text-[#E8F0EA]/60 hover:text-[#D4AF37] transition-colors duration-300 font-light"
+                href="#impacto"
+                className="text-sm text-[#E8F0EA]/70 hover:text-[#D4AF37] transition-colors duration-300 font-light"
               >
-                Conheça a equipe →
+                Calcular Retorno no Caixa →
               </a>
             </motion.div>
           </div>
@@ -244,21 +243,21 @@ export default function HeroSection() {
             <div className="border border-[#E8F0EA]/5 rounded-sm p-10 md:p-14 flex flex-col lg:flex-row items-center justify-between gap-10">
               <div className="max-w-2xl text-center lg:text-left">
                 <span className="text-xs uppercase tracking-[0.35em] text-[#D4AF37] font-light mb-4 block">
-                  Primeiro Parceiro
+                  Protocolo Caixa Primeiro — Caraguatatuba
                 </span>
                 <h3 className="text-2xl md:text-4xl font-serif font-light text-[#E8F0EA] leading-tight mb-4">
-                  Sua empresa pode ser a primeira no mapa.
+                  Sua loja pode validar em 48h e ser destaque no mapa.
                 </h3>
                 <p className="text-base text-[#E8F0EA]/60 font-light leading-relaxed">
-                  Posição exclusiva de destaque no mapa interativo de Caraguatatuba, 
-                  com atendimento automatizado por IA e infraestrutura dedicada.
+                  Disparamos para 60 clientes inativos da sua oficina, pet shop ou barbearia primeiro.
+                  Você só paga o setup de R$ 400 após ver os clientes agendando no seu próprio WhatsApp.
                 </p>
               </div>
               <a
                 href="#pacotes"
                 className="shrink-0 inline-block px-10 py-4 bg-[#D4AF37] text-[#0A140E] text-sm font-medium tracking-wide rounded-sm hover:bg-[#E8F0EA] transition-colors duration-500 transform-gpu"
               >
-                Garantir Posição
+                Ativar Teste de 48h
               </a>
             </div>
           )}

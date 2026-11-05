@@ -1,8 +1,10 @@
 /**
- * DACTYLA CODE // DISPARO EM MASSA OUTBOUND IA + INBOX ZERO ARCHITECTURE
- * Motor autônomo de prospecção passiva via WhatsApp com geração de copy hiperlocalizada em tempo real (Llama 3.2).
- * Inclui arquivamento pós-envio (Auto-Archive), desarquivamento inteligente no scanner de respostas, 
- * e envio do relatório executivo de ciclo para o WhatsApp pessoal do CEO (12 99210-9408).
+ * DACTYLA CODE // DISPARO EM MASSA OUTBOUND IA + INBOX ZERO ARCHITECTURE (V2 - RISCO ZERO 48H)
+ * Motor autônomo de prospecção B2B focado nos 3 subnichos de Caraguatatuba/SP:
+ * 1. Oficinas Mecânicas / Troca de Óleo (Ticket R$ 320 | Ciclo 150 dias)
+ * 2. Pet Shops / Banho & Tosa (Ticket R$ 85 | Ciclo 30 dias)
+ * 3. Barbearias (Ticket R$ 75 | Ciclo 21 dias)
+ * Inclui Spintax nativo, trava de horário comercial, simulação de digitação de 4s e Jitter de 45s a 120s.
  */
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -13,10 +15,13 @@ const http = require('http');
 const https = require('https');
 
 // Configurações Globais do Sistema
-const CEO_WHATSAPP_JID = '5512992109408@c.us'; // WhatsApp Pessoal do CEO Gabriel (12 99210-9408)
+const CEO_WHATSAPP_NUMBER = process.env.VITE_DACTYLA_WHATSAPP || process.env.DACTYLA_WHATSAPP || '5512992109408';
+const CEO_WHATSAPP_JID = `${CEO_WHATSAPP_NUMBER.replace(/\D/g, '')}@c.us`;
 const LEADS_FILE = path.join(__dirname, 'mined_leads.json');
+const UNUSED_LEADS_FILE = path.join(__dirname, 'mined_leads_unused.json');
 const DISPARO_HISTORY_FILE = path.join(__dirname, 'disparo_history.json');
-const MAX_DISPAROS_POR_CICLO = parseInt(process.env.MAX_DISPAROS_POR_CICLO || '15', 10); // Trava de segurança anti-ban para chip de 2 semanas (15 disparos/ciclo)
+const MAX_DISPAROS_POR_CICLO = parseInt(process.env.MAX_DISPAROS_POR_CICLO || '15', 10);
+const TYPING_SIMULATION_MS = 4000;
 
 // Cores ANSI para Terminal Corporativo
 const LOG_COLORS = {
@@ -36,8 +41,8 @@ function logMsg(status, text) {
   console.log(`${LOG_COLORS.gray}[${time}]${LOG_COLORS.reset} ${LOG_COLORS.gold}[${status}]${LOG_COLORS.reset} ${text}`);
 }
 
-// Utilitário de pausa aleatória anti-ban entre 35 e 75 segundos
-function getRandomDelayMs(minSec = 35, maxSec = 75) {
+// Jitter Randômico Anti-Ban atualizado: 45s a 120s
+function getRandomDelayMs(minSec = 45, maxSec = 120) {
   const minMs = minSec * 1000;
   const maxMs = maxSec * 1000;
   return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
@@ -45,7 +50,34 @@ function getRandomDelayMs(minSec = 35, maxSec = 75) {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Carrega histórico de disparos passados
+// Trava de Horário Comercial (Seg-Sáb das 08:30 às 18:30, ou override via --force / FORCE_OUTSIDE_HOURS=true)
+function isWithinBusinessHours() {
+  if (process.argv.includes('--force') || process.env.FORCE_OUTSIDE_HOURS === 'true') {
+    return true;
+  }
+  const now = new Date();
+  const day = now.getDay(); // 0 = Domingo
+  if (day === 0) return false;
+  const decimalHour = now.getHours() + now.getMinutes() / 60;
+  return decimalHour >= 8.5 && decimalHour <= 18.5;
+}
+
+// Motor Recursivo de Spintax: converte "{Olá|Opa|Fala}" em uma escolha aleatória natural
+function resolveSpintax(template) {
+  if (!template) return '';
+  let result = String(template);
+  const pattern = /\{([^{}]+)\}/g;
+  let safetyCounter = 0;
+  while (pattern.test(result) && safetyCounter < 20) {
+    result = result.replace(pattern, (_, group) => {
+      const options = group.split('|');
+      return options[Math.floor(Math.random() * options.length)];
+    });
+    safetyCounter++;
+  }
+  return result;
+}
+
 function loadDisparoHistory() {
   try {
     if (fs.existsSync(DISPARO_HISTORY_FILE)) {
@@ -69,43 +101,47 @@ function saveDisparoHistory(historySet) {
 
 const { sanitizeLLMPromptInput, sanitizeStrictPhoneJid } = require('./security_sanitizer.cjs');
 
-// Formata número de telefone para o formato MSISDN JID do WhatsApp
 function formatPhoneToJid(phoneStr) {
   return sanitizeStrictPhoneJid(phoneStr);
 }
 
-// Valida se o número é celular (DDD 12 + 9 dígitos para Caraguá ou celular válido)
+// Validação estrita de número celular (DDD 12 + 9º dígito 9)
 function isMobilePhone(phoneStr) {
   if (!phoneStr) return false;
   const digits = String(phoneStr).replace(/\D/g, '');
   if (digits.startsWith('5512')) {
-    return digits.length === 13 && digits.substring(4, 5) === '9';
+    return digits.length === 13 && digits.charAt(4) === '9';
   }
   if (digits.startsWith('12')) {
-    return digits.length === 11 && digits.substring(2, 3) === '9';
+    return digits.length === 11 && digits.charAt(2) === '9';
   }
-  if (digits.length === 10) return false;
-  return digits.length >= 11;
+  if (digits.startsWith('55')) {
+    return digits.length === 13 && digits.charAt(4) === '9';
+  }
+  if (digits.length === 11) {
+    return digits.charAt(2) === '9';
+  }
+  return false;
 }
 
-// Carrega a base de leads minerados (Local + Cloud Sync / Hub API)
+// Carrega base de leads não usados (Prioriza mined_leads_unused.json)
 async function loadMinedLeads() {
   let leads = [];
+  const fileToLoad = fs.existsSync(UNUSED_LEADS_FILE) ? UNUSED_LEADS_FILE : LEADS_FILE;
 
   try {
-    if (fs.existsSync(LEADS_FILE)) {
-      const data = fs.readFileSync(LEADS_FILE, 'utf-8');
+    if (fs.existsSync(fileToLoad)) {
+      const data = fs.readFileSync(fileToLoad, 'utf-8');
       const parsed = JSON.parse(data);
       if (Array.isArray(parsed)) leads = parsed;
     }
   } catch (e) {
-    console.error('Erro ao carregar mined_leads.json:', e.message);
+    console.error('Erro ao carregar arquivo de leads:', e.message);
   }
 
-  // Sincroniza leads adicionais do Painel / Hub em nuvem
   try {
     const cloudRes = await new Promise((resolve) => {
-      const req = https.get('https://www.dactylacode.com.br/api/leads-sync', { timeout: 5000 }, (res) => {
+      const req = https.get('https://www.dactylacode.com.br/api/leads-sync', { timeout: 4000 }, (res) => {
         let body = '';
         res.on('data', chunk => body += chunk);
         res.on('end', () => {
@@ -128,8 +164,9 @@ async function loadMinedLeads() {
           leads.push({
             name: cloudLead.empresa || cloudLead.name,
             phone: cloudLead.telefone || cloudLead.phone,
-            bairro: cloudLead.bairro || cloudLead.categoria || 'Caraguatatuba',
-            dor: cloudLead.mensagemPitch || 'demora no atendimento no WhatsApp'
+            category: cloudLead.categoria || 'Comércio Local',
+            bairro: cloudLead.bairro || 'Caraguatatuba',
+            dor: cloudLead.mensagemPitch || 'reativação de clientes inativos'
           });
         }
       }
@@ -139,7 +176,16 @@ async function loadMinedLeads() {
   return leads;
 }
 
-// Chamada HTTP nativa para o Ollama Local (http://127.0.0.1:11434/api/generate)
+function saveUnusedLeads(remainingUnusedLeads) {
+  try {
+    fs.writeFileSync(UNUSED_LEADS_FILE, JSON.stringify(remainingUnusedLeads, null, 2), 'utf-8');
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(remainingUnusedLeads, null, 2), 'utf-8');
+    logMsg('QUEUE SYNC', `[💾] Fila de leads não usados salva: ${remainingUnusedLeads.length} leads pendentes.`);
+  } catch (e) {
+    console.error('Erro ao salvar fila de leads não usados:', e.message);
+  }
+}
+
 function callOllamaAPI(promptText) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
@@ -184,41 +230,67 @@ function callOllamaAPI(promptText) {
   });
 }
 
-// Fallback de segurança humano caso o Ollama fique indisponível
-function getFallbackColdMessage(companyName, bairro) {
-  const cleanName = companyName || 'Empresa';
-  const localText = bairro ? `no bairro ${bairro}` : 'aí em Caraguatatuba';
-
-  return `Opa, tudo bem? Sou desenvolvedor aqui na Dactyla Code em Caraguá. Vi a ${cleanName} ${localText} e decidi te mandar essa mensagem rápida.
-
-A gente desenvolve soluções de tecnologia e automações de WhatsApp sob medida para ajudar comércios da nossa cidade a atenderem os clientes mais rápido e aumentarem as vendas no dia a dia.
-
-Se quiser dar uma olhada em como funciona ou trocar uma ideia, dá uma conferida no nosso site: dactylacode.com.br/auditoria ou é só me mandar uma mensagem por aqui!`;
+function detectNicheType(category = '', companyName = '') {
+  const combined = `${category} ${companyName}`.toLowerCase();
+  if (/oficina|auto|óleo|oleo|mecânic|mecanic|pneu|alinhamento/i.test(combined)) return 'oficina';
+  if (/pet|banho|tosa|vet|cão|cao|gato/i.test(combined)) return 'petshop';
+  if (/barbearia|barber|cabelo|barba/i.test(combined)) return 'barbearia';
+  return 'geral';
 }
 
-// Gerador de Mensagem com Llama 3.2 1B + Fallback Resiliente
+function getFallbackColdMessage(companyName, bairro, category = '') {
+  const cleanName = companyName || 'sua loja';
+  const localText = bairro ? `aí em ${bairro}` : 'aqui em Caraguatatuba';
+  const niche = detectNicheType(category, cleanName);
+
+  if (niche === 'oficina') {
+    const spintaxOficina = `{Opa, tudo bem?|Fala campeão, tudo joia?|Bom dia, tudo tranquilo?} Sou {engenheiro|desenvolvedor} da Dactyla Code aqui em Caraguá. Vi a *${cleanName}* ${localText} e resolvi te mandar um alô rápido.
+
+A gente criou um motor que conecta no WhatsApp da própria oficina e chama automaticamente aqueles clientes de {troca de óleo|revisão preventiva|alinhamento e freios} que sumiram há mais de 5 meses. Pra você ver funcionando na prática, nós fazemos um *Teste de 48h com Risco Zero* para 60 clientes inativos seus — você só paga a implantação (R$ 400) depois de ver os carros agendando no box (e 1 carro recuperado no mês já paga os R$ 130 da manutenção!).
+
+{Quer fazer esse teste de 48h sem compromisso essa semana?|Topa testar com 60 clientes sumidos aí da oficina?}`;
+    return resolveSpintax(spintaxOficina);
+  }
+
+  if (niche === 'petshop') {
+    const spintaxPet = `{Opa, tudo bem?|Olá, tudo joia por aí?|Oi, tudo tranquilo?} Sou da Dactyla Code aqui em Caraguá. Vi o *${cleanName}* ${localText} e queria te mostrar uma novidade bem legal pros Pet Shops da cidade.
+
+Diferente de sistemas como o SimplesVet que cobram R$ 0,50 por mensagem, nosso motor conecta direto no seu WhatsApp atual (com R$ 0 de taxa por envio) para avisar com 1 clique quando o pet está pronto e reativar tutores que passaram de 30 dias sem dar banho. Liberamos um *Teste de 48h com Risco Zero* para 60 clientes sumidos da sua loja: você só paga o setup (R$ 400) depois de ver o pessoal agendando (e 2 banhos no mês já pagam os R$ 130 de mensalidade).
+
+{Vamos testar essa semana sem custo inicial?|Posso liberar o teste de 48h aí pro Pet Shop?}`;
+    return resolveSpintax(spintaxPet);
+  }
+
+  if (niche === 'barbearia') {
+    const spintaxBarber = `{Opa, tudo bem?|Fala parceiro, tudo tranquilo?|E aí, tudo joia?} Sou da Dactyla Code aqui de Caraguá. Vi a *${cleanName}* ${localText} e decidi te mandar essa mensagem rápida.
+
+Sabemos que quando o cliente demora 40 dias em vez de 21 pra voltar, a barbearia perde quase metade do lucro no ano. Nosso motor conecta no seu WhatsApp atual e chama de forma 100% humana os clientes sumidos pra lotar sua *terça e quarta-feira*. Fazemos um *Teste de 48h com Risco Zero* abordando 60 clientes inativos seus primeiro — você só paga os R$ 400 de setup depois de ver a cadeira enchendo!
+
+{Bora rodar esse teste de 48h pra lotar a próxima terça e quarta?|Quer testar sem compromisso aí na barbearia?}`;
+    return resolveSpintax(spintaxBarber);
+  }
+
+  const spintaxGeral = `{Opa, tudo bem?|Olá, tudo joia?} Sou desenvolvedor aqui na Dactyla Code em Caraguá. Vi a *${cleanName}* ${localText} e decidi te mandar essa mensagem rápida.
+
+Nós instalamos um Motor de Reativação direto no seu WhatsApp atual que resgata clientes inativos e preenche os dias de menor movimento. Fazemos uma validação prática de *48h com Risco Zero* para 60 clientes antigos seus: você só paga o setup (R$ 400) depois que o dinheiro entrar no caixa (e a mensalidade é só R$ 130/mês sem taxa por mensagem).
+
+Se quiser testar essa semana, me dá um alô por aqui ou simula seu retorno em: dactylacode.com.br/auditoria`;
+  return resolveSpintax(spintaxGeral);
+}
+
 async function generateAiColdMessage(lead) {
   const companyName = sanitizeLLMPromptInput(lead.name || lead.empresa || 'Empresa Local');
   const bairro = sanitizeLLMPromptInput(lead.bairro || lead.bairro_nome || lead.neighborhood || 'Caraguatatuba');
-  const dor = sanitizeLLMPromptInput(lead.dor || lead.gargalo || 'demora no atendimento no WhatsApp e perda de vendas para concorrentes');
-  const nicho = sanitizeLLMPromptInput(lead.nicho || lead.categoria || 'comércio local');
+  const category = sanitizeLLMPromptInput(lead.category || lead.categoria || 'Comércio Local');
 
   const promptText = `
-Você é um desenvolvedor da agência Dactyla Code em Caraguatatuba/SP.
-Escreva uma mensagem de WhatsApp EXTREMAMENTE HUMANA, amigável, acolhedora e natural (máximo 2 parágrafos curtos) para o dono desta empresa local.
+Você é um engenheiro da Dactyla Code em Caraguatatuba/SP.
+Escreva uma mensagem de WhatsApp EXTREMAMENTE HUMANA, direta e focada em dinheiro no caixa (máximo 2 parágrafos curtos) para o dono da empresa "${companyName}" (${category}) no bairro ${bairro}.
 
-REGRAS OBRIGATÓRIAS:
-1. Comece com "Opa, tudo bem?".
-2. Fale que você é desenvolvedor da Dactyla Code aqui em Caraguá e notou a empresa dele (${companyName}) localizada no bairro ${bairro}.
-3. NÃO faça perguntas robóticas, NÃO pareça um bot de pesquisa/questionário automático e NÃO pareça uma pesquisa telemarketing.
-4. Escreva exatamente como uma pessoa real conversando amigavelmente no WhatsApp: comente que vocês desenvolvem soluções de tecnologia e automações para ajudar comércios de Caraguá a atenderem mais rápido e fecharem mais vendas.
-5. Indique o link dactylacode.com.br/auditoria de forma natural ou diga que ele pode te chamar por aqui.
-6. NUNCA cite nomes próprios de pessoas e NUNCA mencione o seu endereço pessoal.
-
-DADOS DO CLIENTE LOCAL:
-- Nome da Empresa: ${companyName}
-- Nicho: ${nicho}
-- Bairro da Empresa: ${bairro}
+OFERTA OBRIGATÓRIA ("Protocolo Caixa Primeiro em 48h"):
+1. Comece com "Opa, tudo bem?" e cite que viu a ${companyName} em ${bairro} aqui em Caraguá.
+2. Ofereça o "Teste de 48h com Risco Zero": nós disparamos para 60 clientes inativos da loja direto no WhatsApp deles, e o lojista SÓ paga o setup de R$ 400 depois de ver os clientes respondendo e agendando (mensalidade de R$ 130/mês com zero taxa por mensagem).
+3. Termine com uma pergunta curta convidando para fazer o teste de 48h essa semana.
 
 Mensagem de WhatsApp humana:`;
 
@@ -226,33 +298,29 @@ Mensagem de WhatsApp humana:`;
     const rawAiResponse = await callOllamaAPI(promptText);
     const cleanedMessage = rawAiResponse ? rawAiResponse.trim() : '';
 
-    if (cleanedMessage && !cleanedMessage.toLowerCase().includes('não posso') && !cleanedMessage.toLowerCase().includes('desculpe')) {
+    if (cleanedMessage && cleanedMessage.length > 40 && !cleanedMessage.toLowerCase().includes('desculpe')) {
       return cleanedMessage;
     }
   } catch (err) {
-    logMsg('AVISO IA', `Ollama indisponível (${err.message}). Acionando fallback humano...`);
+    logMsg('FALLBACK SPINTAX', `Usando Playbook Spintax Nativo para ${companyName} (${category})...`);
   }
 
-  return getFallbackColdMessage(companyName, bairro);
+  return getFallbackColdMessage(companyName, bairro, category);
 }
 
-// Arquivamento Robusto Multi-Tier (Inbox Zero)
 async function forceArchiveChat(client, jid, companyName) {
   try {
-    await sleep(2500); // Aguarda 2.5s para o WhatsApp Web sincronizar a conversa
+    await sleep(2500);
 
-    // 1. Arquivamento via Objeto de Chat do whatsapp-web.js
     const chat = await client.getChatById(jid).catch(() => null);
     if (chat && typeof chat.archive === 'function') {
       await chat.archive().catch(() => {});
     }
 
-    // 2. Arquivamento via Método Secundário do Cliente
     if (typeof client.archiveChat === 'function') {
       await client.archiveChat(jid).catch(() => {});
     }
 
-    // 3. Arquivamento via Injeção Direta no Store do Puppeteer
     if (client.pupPage) {
       await client.pupPage.evaluate(async (targetJid) => {
         try {
@@ -270,16 +338,12 @@ async function forceArchiveChat(client, jid, companyName) {
 
     logMsg('INBOX ZERO', `[📥] Chat com ${companyName} (${jid}) arquivado com sucesso.`);
   } catch (err) {
-    logMsg('INBOX ZERO AVISO', `Tentativa de arquivamento para ${companyName}: ${err.message}`);
+    logMsg('INBOX ZERO AVISO', `Arquivamento para ${companyName}: ${err.message}`);
   }
 }
 
-/**
- * Scanner de Respostas de Leads Antigos (checkPreviousReplies)
- * Desarquivamento Inteligente: Se o lead respondeu, desarquiva o chat para o topo da lista do CEO!
- */
 async function checkPreviousReplies(client, historySet) {
-  logMsg('AUDITORIA', 'Iniciando varredura no histórico de chats para identificar respostas de leads...');
+  logMsg('AUDITORIA', 'Iniciando varredura no histórico para identificar respostas de leads...');
   let replyCount = 0;
   const historyArray = Array.from(historySet);
 
@@ -296,25 +360,21 @@ async function checkPreviousReplies(client, historySet) {
 
       if (hasUnread || lastMsgFromLead) {
         replyCount++;
-        
-        // DESARQUIVAMENTO INTELIGENTE (INBOX ZERO RECOVERY)
         if (chat.isArchived) {
           await chat.unarchive().catch(() => {});
-          logMsg('INBOX ZERO RECOVERY', `[🔓] Chat com ${jid} desarquivado e movido para a caixa de entrada prioritária do CEO!`);
+          logMsg('INBOX ZERO RECOVERY', `[🔓] Chat com ${jid} desarquivado e movido para a caixa de entrada do CEO!`);
         } else {
-          logMsg('RESPOSTA DETECTADA', `[📩] Chat com ${jid} possui resposta pendente do cliente.`);
+          logMsg('RESPOSTA DETECTADA', `[📩] Chat com ${jid} possui resposta pendente.`);
         }
       }
-    } catch (e) {
-      // Ignora falhas pontuais de chat
-    }
+    } catch (e) {}
   }
 
   logMsg('AUDITORIA CONCLUÍDA', `Total de leads antigos que responderam: ${replyCount}`);
   return replyCount;
 }
 
-// Inicialização do WhatsApp Web
+// Inicialização do WhatsApp Web Client
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: path.join(__dirname, '.wwebjs_disparo_auth') }),
   puppeteer: {
@@ -326,122 +386,132 @@ const client = new Client({
 client.on('qr', (qr) => {
   console.clear();
   console.log(`${LOG_COLORS.gold}=====================================================${LOG_COLORS.reset}`);
-  console.log(`${LOG_COLORS.gold} DACTYLA CODE // DISPARO OUTBOUND IA (INBOX ZERO) ${LOG_COLORS.reset}`);
+  console.log(`${LOG_COLORS.gold} DACTYLA CODE // DISPARO OUTBOUND 3 NICHOS (48H)     ${LOG_COLORS.reset}`);
   console.log(`${LOG_COLORS.gold}=====================================================${LOG_COLORS.reset}\n`);
   qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', async () => {
   console.log(`\n${LOG_COLORS.green}=====================================================${LOG_COLORS.reset}`);
-  console.log(`${LOG_COLORS.green} [OK] CLIENTE WHATSAPP CONECTADO! INICIANDO DISPAROS COM IA...${LOG_COLORS.reset}`);
+  console.log(`${LOG_COLORS.green} [OK] CLIENTE WHATSAPP CONECTADO! INICIANDO CICLO... ${LOG_COLORS.reset}`);
   console.log(`${LOG_COLORS.green}=====================================================${LOG_COLORS.reset}\n`);
 
-  const leads = await loadMinedLeads();
+  if (!isWithinBusinessHours()) {
+    logMsg('TRAVA HORÁRIO COMERCIAL', 'Fora do expediente comercial (Seg-Sáb 08:30 às 18:30). Ciclo abortado para proteção anti-ban (use --force para ignorar).');
+    process.exit(0);
+  }
+
+  const initialLeads = await loadMinedLeads();
   const history = loadDisparoHistory();
 
-  const totalFila = leads.length;
+  const totalInicial = initialLeads.length;
   let sucessoCount = 0;
   let erroCount = 0;
+  const unusedLeadsQueue = [];
 
-  if (totalFila === 0) {
-    logMsg('ALERTA', 'Nenhum lead encontrado em mined_leads.json.');
+  if (totalInicial === 0) {
+    logMsg('ALERTA', 'Nenhum lead não usado encontrado na fila.');
   } else {
-    logMsg('INÍCIO', `Total de leads na fila: ${totalFila} | Já disparados anteriormente: ${history.size}`);
+    logMsg('INÍCIO', `Total de leads na fila de espera: ${totalInicial} | Já disparados historicamente: ${history.size}`);
 
-    for (let i = 0; i < leads.length; i++) {
-      if (sucessoCount >= MAX_DISPAROS_POR_CICLO) {
-        logMsg('RAMP-UP SAFETY', `[🛡️] Limite de segurança (${MAX_DISPAROS_POR_CICLO} disparos/ciclo) atingido para proteger a reputação do chip. Pausando até o próximo ciclo.`);
-        break;
-      }
-
-      const lead = leads[i];
+    for (let i = 0; i < initialLeads.length; i++) {
+      const lead = initialLeads[i];
       const rawPhone = lead.phone || lead.telefone;
       const companyName = lead.name || lead.empresa || 'Empresa B2B';
 
-      // 1. FILTRO DE TELEFONE FIXO (IGNORA FIXOS COMERCIAIS SEM CONTABILIZAR COMO ERRO)
       if (!isMobilePhone(rawPhone)) {
-        logMsg('FIXO IGNORADO', `[☎️] ${companyName} (${rawPhone}) é telefone fixo. Pulando sem erro.`);
+        logMsg('FIXO IGNORADO', `[☎️] ${companyName} (${rawPhone}) é fixo. Removendo da fila.`);
         continue;
       }
 
       const jid = formatPhoneToJid(rawPhone);
-      if (!jid) {
-        logMsg('IGNORADO', `Telefone inválido para ${companyName}: ${rawPhone}`);
+      if (!jid || history.has(jid)) {
+        logMsg('DUPLICADO / INVÁLIDO', `Lead ${companyName} (${rawPhone}) já enviado ou inválido. Removendo da fila.`);
         continue;
       }
 
-      if (history.has(jid)) {
-        logMsg('DUPLICADO', `Lead ${companyName} (${jid}) já recebeu disparo anterior. Pulando.`);
+      if (sucessoCount >= MAX_DISPAROS_POR_CICLO) {
+        logMsg('RAMP-UP SAFETY', `[🛡️] Limite de segurança de ${MAX_DISPAROS_POR_CICLO} disparos/ciclo atingido.`);
+        unusedLeadsQueue.push(lead);
         continue;
       }
 
-      // 2. CHECAGEM PRÓ-ATIVA DE CONTA NO WHATSAPP WEB
       const isRegistered = await client.isRegisteredUser(jid).catch(() => false);
       if (!isRegistered) {
-        logMsg('SEM WHATSAPP', `[🚫] ${companyName} (${rawPhone}) não possui conta de WhatsApp ativa. Pulando.`);
+        logMsg('SEM WHATSAPP', `[🚫] ${companyName} (${rawPhone}) não tem WhatsApp. Removendo da fila.`);
+        history.add(jid);
+        saveDisparoHistory(history);
         continue;
       }
 
-      logMsg('GERANDO IA', `[${i + 1}/${leads.length}] Gerando copy hiperlocal para ${companyName}...`);
+      logMsg('GERANDO COPY', `[${sucessoCount + 1}/${MAX_DISPAROS_POR_CICLO}] Preparando abordagem 48h para ${companyName}...`);
       const aiMessageText = await generateAiColdMessage(lead);
 
       try {
+        const chat = await client.getChatById(jid).catch(() => null);
+        if (chat && typeof chat.sendStateTyping === 'function') {
+          await chat.sendStateTyping().catch(() => {});
+        }
+        await sleep(TYPING_SIMULATION_MS);
+
         logMsg('ENVIANDO', `Disparando mensagem para ${companyName} (${jid})...`);
-
-        // 1. Envio da mensagem no WhatsApp
-        const sentMsg = await client.sendMessage(jid, aiMessageText);
-
-        // 2. ARQUIVAMENTO AUTOMÁTICO MULTI-TIER PÓS-ENVIO (AUTO-ARCHIVE INBOX ZERO)
+        await client.sendMessage(jid, aiMessageText);
         await forceArchiveChat(client, jid, companyName);
 
         history.add(jid);
         saveDisparoHistory(history);
         sucessoCount++;
 
-        logMsg('SUCESSO', `[✅] Mensagem enviada e chat arquivado com sucesso para ${companyName}!`);
-        console.log(`${LOG_COLORS.cyan}💬 Mensagem enviada:\n"${aiMessageText.substring(0, 120)}..."${LOG_COLORS.reset}\n`);
+        logMsg('SUCESSO', `[✅] Mensagem enviada e chat arquivado para ${companyName}!`);
+        console.log(`${LOG_COLORS.cyan}💬 Copy enviada:\n"${aiMessageText.substring(0, 140)}..."${LOG_COLORS.reset}\n`);
 
-        // Pausa estrita anti-ban entre 35 e 75 segundos
-        const delayMs = getRandomDelayMs(35, 75);
+        const delayMs = getRandomDelayMs(45, 120);
         const delaySec = Math.round(delayMs / 1000);
-        logMsg('PAUSA ANTI-BAN', `Aguardando ${delaySec}s antes do próximo disparo para simular comportamento humano...\n`);
+        logMsg('PAUSA ANTI-BAN (45s-120s)', `Aguardando ${delaySec}s antes do próximo disparo...\n`);
         await sleep(delayMs);
 
       } catch (err) {
         logMsg('ERRO', `[❌] Falha no disparo para ${companyName} (${jid}): ${err.message}`);
         erroCount++;
+        unusedLeadsQueue.push(lead);
       }
     }
   }
 
-  // ------------------------------------------------------------------
-  // FASE DE MONITORAMENTO E NOTIFICAÇÃO DO CEO (+55 12 99210-9408)
-  // ------------------------------------------------------------------
-  logMsg('MONITORAMENTO', 'Fila finalizada. Executando scanner de respostas no histórico...');
+  saveUnusedLeads(unusedLeadsQueue);
+
+  logMsg('MONITORAMENTO', 'Executando scanner de respostas no histórico...');
   const qntRespostas = await checkPreviousReplies(client, history);
 
-  const reportText = `🤖 Dactyla Core | Relatório de Ciclo:
+  const reportText = `🤖 Dactyla Core | Relatório Outbound 3 Nichos (Protocolo 48h):
 
-📦 Leads na fila: ${totalFila}
-✅ Disparos da IA: ${sucessoCount}
+📦 Leads na fila de espera: ${unusedLeadsQueue.length}
+✅ Disparos neste ciclo: ${sucessoCount}
 ❌ Erros: ${erroCount}
 
-💬 ATENÇÃO: Existem ${qntRespostas} leads de ciclos anteriores que te responderam e aguardam retorno humano!
-
-Aguardando nova extração de 2h.`;
+💬 ATENÇÃO: Existem ${qntRespostas} lojistas que responderam e aguardam retorno humano!`;
 
   logMsg('RELATÓRIO CEO', `Enviando relatório executivo para o CEO Gabriel (${CEO_WHATSAPP_JID})...`);
 
   try {
     await client.sendMessage(CEO_WHATSAPP_JID, reportText);
-    logMsg('RELATÓRIO ENTREGUE', '✅ Relatório entregue com sucesso no WhatsApp do CEO!');
+    logMsg('RELATÓRIO ENTREGUE', '✅ Relatório entregue no WhatsApp do CEO!');
   } catch (err) {
     logMsg('ERRO RELATÓRIO', `❌ Falha ao enviar relatório para o CEO: ${err.message}`);
   }
 
-  logMsg('ENCERRAMENTO', 'Aguardando 3 segundos para finalização completa do ciclo...');
+  logMsg('ENCERRAMENTO', 'Aguardando 3 segundos para finalização do ciclo...');
   await sleep(3000);
   process.exit(0);
 });
 
-client.initialize();
+if (require.main === module) {
+  client.initialize();
+}
+
+module.exports = {
+  resolveSpintax,
+  getFallbackColdMessage,
+  getRandomDelayMs,
+  isWithinBusinessHours
+};

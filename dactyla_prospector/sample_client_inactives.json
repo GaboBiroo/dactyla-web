@@ -1,0 +1,62 @@
+[
+  {
+    "id_loja": "oficina_litoral_caragua",
+    "nome_loja": "Centro Automotivo Litoral",
+    "nicho": "oficina",
+    "campanha_tipo": "REATIVACAO_PREDITIVA",
+    "nome_cliente": "Marcos",
+    "telefone": "5512997112233",
+    "item_pet_ou_carro": "Gol G6",
+    "dias_inativo": 155
+  },
+  {
+    "id_loja": "oficina_litoral_caragua",
+    "nome_loja": "Centro Automotivo Litoral",
+    "nicho": "oficina",
+    "campanha_tipo": "SERVICO_CONCLUIDO",
+    "nome_cliente": "Roberto",
+    "telefone": "5512997445566",
+    "item_pet_ou_carro": "Hilux",
+    "dias_inativo": 0
+  },
+  {
+    "id_loja": "pet_caicara_indaia",
+    "nome_loja": "Pet Shop Caiçara",
+    "nicho": "petshop",
+    "campanha_tipo": "REATIVACAO_PREDITIVA",
+    "nome_cliente": "Juliana",
+    "telefone": "5512981223344",
+    "item_pet_ou_carro": "Thor",
+    "dias_inativo": 34
+  },
+  {
+    "id_loja": "pet_caicara_indaia",
+    "nome_loja": "Pet Shop Caiçara",
+    "nicho": "petshop",
+    "campanha_tipo": "SERVICO_CONCLUIDO",
+    "nome_cliente": "Fernanda",
+    "telefone": "5512981556677",
+    "item_pet_ou_carro": "Mel",
+    "dias_inativo": 0
+  },
+  {
+    "id_loja": "barbearia_costa_norte",
+    "nome_loja": "Barbearia Costa Norte",
+    "nicho": "barbearia",
+    "campanha_tipo": "REATIVACAO_PREDITIVA",
+    "nome_cliente": "Lucas",
+    "telefone": "5512992334455",
+    "item_pet_ou_carro": "corte degradê e barba",
+    "dias_inativo": 26
+  },
+  {
+    "id_loja": "barbearia_costa_norte",
+    "nome_loja": "Barbearia Costa Norte",
+    "nicho": "barbearia",
+    "campanha_tipo": "OFERTA_TERCA_QUARTA",
+    "nome_cliente": "Thiago",
+    "telefone": "5512992667788",
+    "item_pet_ou_carro": "combo corte + barba",
+    "dias_inativo": 22
+  }
+]

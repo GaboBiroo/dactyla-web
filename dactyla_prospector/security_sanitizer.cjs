@@ -14,7 +14,7 @@ function sanitizeLLMPromptInput(text) {
   // Remove tentativas de instrução adversária (Prompt Injection Bypasses)
   const injectionPatterns = [
     /ignore\s+(all\s+)?(previous\s+)?instructions/gi,
-    /system\s* prompt/gi,
+    /system\s*prompt/gi,
     /you\s+are\s+now/gi,
     /developer\s+mode/gi,
     /disregard\s+rules/gi,
@@ -72,8 +72,8 @@ function sanitizeStrictPhoneJid(phoneStr) {
 
   let cleanDigits = digits;
   if (cleanDigits.startsWith('0')) cleanDigits = cleanDigits.substring(1);
-  if (cleanDigits.length in [8, 9]) cleanDigits = '12' + cleanDigits; // DDD 12 Caraguá
-  if (cleanDigits.length in [10, 11] && !cleanDigits.startsWith('55')) cleanDigits = '55' + cleanDigits;
+  if ([8, 9].includes(cleanDigits.length)) cleanDigits = '12' + cleanDigits; // DDD 12 Caraguá
+  if ([10, 11].includes(cleanDigits.length) && !cleanDigits.startsWith('55')) cleanDigits = '55' + cleanDigits;
 
   // Validação matemática de tamanho (deve possuir entre 12 e 13 dígitos)
   if (cleanDigits.length < 12 || cleanDigits.length > 13) {

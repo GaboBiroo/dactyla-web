@@ -20,7 +20,7 @@ service_account*.json
 *.p12
 *.crt
 
-# 2. BANCOS DE DADOS E CACHES LOCAIS
+# 2. BANCOS DE DADOS, FILAS DE LEADS E CACHES LOCAIS
 *.sqlite
 *.sqlite3
 *.fdb
@@ -28,6 +28,11 @@ database.sqlite
 database.sqlite3
 dactyla_prospector/bot_user_states.json
 dactyla_prospector/mined_leads.json
+dactyla_prospector/mined_leads_unused.json
+dactyla_prospector/mined_leads_master.json
+dactyla_prospector/email_leads.json
+dactyla_prospector/disparo_history.json
+dactyla_prospector/reactivation_ledger.json
 dactyla_prospector/prospects_history.json
 dactyla_prospector/tamandua_status.json
 dactyla_prospector/prospects_caraguatatuba.csv
@@ -38,19 +43,25 @@ dactyla_prospector/prospects_caraguatatuba.csv
 .wwebjs_cache/
 .wwebjs_disparo_auth/
 .wwebjs_disparo_cache/
+.wwebjs_reactivation_auth/
 dactyla_prospector/.wwebjs_auth/
 dactyla_prospector/.wwebjs_cache/
 dactyla_prospector/.wwebjs_disparo_auth/
 dactyla_prospector/.wwebjs_disparo_cache/
+dactyla_prospector/.wwebjs_reactivation_auth/
 
-# 4. DEPENDÊNCIAS E BUILDS
+# 4. DEPENDÊNCIAS, INSTALADORES LOCAIS E BUILDS
 node_modules/
 dist/
 dist-ssr/
 build/
 .next/
 out/
+.vercel/
 *.tsbuildinfo
+*.exe
+*.msi
+DOSSIE_TECNICO_DACTYLA_CODE.md
 
 # 5. PYTHON CACHE & VIRTUALENVS
 __pycache__/

@@ -5,50 +5,54 @@ export default function PricingSection() {
   const tiers = [
     {
       id: 'tier-1',
-      name: 'Presença Prime',
-      badge: 'INFRAESTRUTURA BASE',
-      price: 'R$ 1.350',
-      mrr: '+ R$ 97/mês (manutenção & cloud)',
-      tagline: 'Infraestrutura web de alta velocidade para autoridade imediata.',
-      highlighted: false,
+      name: 'Motor de Reativação 48h',
+      badge: 'PROTOCOLO RISCO ZERO',
+      price: 'R$ 400',
+      mrr: '+ R$ 130/mês (sustentação & disparos anti-ban)',
+      tagline: 'Setup pago somente após validação prática de 48h com 60 clientes inativos da sua loja.',
+      highlighted: true,
+      ctaLabel: 'Testar 48h com Risco Zero',
       features: [
-        'Single Page Application (SPA) em Next.js',
-        'Integração Google Maps API',
-        'Score 90+ Lighthouse (Performance Extrema)',
-        'Webhook Base de Captura',
-        'Infraestrutura Cloud Gerenciada',
-        'SEO Técnico Semântico',
+        'Pareamento em 2 min no WhatsApp atual da loja',
+        'Reativação Preditiva de Clientes Inativos',
+        'Aviso de Serviço Pronto c/ 1 clique (libera box/gaiola)',
+        'Disparo de Horários Ociosos (Terça e Quarta-feira)',
+        'Cadência Humana c/ Spintax e Jitter Anti-Ban',
+        'Zero taxa por mensagem enviada (R$ 0,00/msg)',
       ],
     },
     {
       id: 'tier-2',
-      name: 'Ecossistema IA',
-      badge: 'MÁQUINA DE AUTOMAÇÃO',
-      price: 'R$ 2.497',
-      mrr: '+ R$ 147/mês (atendimento & agentes)',
-      tagline: 'Plataforma inteligente integrada com automação e IA nativa.',
-      highlighted: true,
+      name: 'Presença Prime + Motor IA',
+      badge: 'AUTORIDADE + AUTOMAÇÃO',
+      price: 'R$ 1.350',
+      mrr: '+ R$ 147/mês (cloud & motor de reativação)',
+      tagline: 'Site ultrarrápido em Next.js para dominar o Google em Caraguá + Motor de Reativação 48h incluso.',
+      highlighted: false,
+      ctaLabel: 'Solicitar Presença Prime',
       features: [
-        'Agente de IA OpenAI',
-        'Orquestração de Dados n8n',
-        'Dashboard Proprietário',
-        'Pipeline de Atendimento via WhatsApp',
-        'Plataforma Multi-páginas em Next.js',
-        'Nó no Mapa Interativo de Caraguá',
+        'Single Page Application (SPA) em Next.js (Score 90+)',
+        'SEO Local para Google Maps em Caraguatatuba',
+        'Tudo do Motor de Reativação 48h incluso',
+        'Agente de IA 24/7 para triagem de novos clientes',
+        'Infraestrutura Cloud & Local-First Gerenciada',
+        'Nó de destaque no Mapa Interativo de Caraguá',
       ],
     },
     {
       id: 'tier-3',
-      name: 'Dactyla Custom',
-      badge: 'ENTERPRISE',
+      name: 'Engenharia Custom / Big Data',
+      badge: 'OPERAÇÕES ESPECIAIS',
       price: 'Sob Consulta',
-      mrr: 'contrato anual dedicado',
-      tagline: 'Engenharia de software sob medida para ecossistemas complexos.',
+      mrr: 'arquitetura sob demanda',
+      tagline: 'Engenharia de software sob medida, ETL de bancos legados e automação em escala.',
       highlighted: false,
+      ctaLabel: 'Agendar Escopo Técnico',
       features: [
-        'Sistemas de Alta Disponibilidade',
-        'Arquitetura Multi-tenant',
-        'Agentes Autônomos de IA & Prospecção',
+        'Sistemas de Alta Disponibilidade & Multi-tenant',
+        'Extração de Dados de PDVs Legados (Firebird/SQL)',
+        'Engenharia de Dados (RAIS/CAGED) & Scrapers Python',
+        'Orquestração Avançada n8n Queue Mode + Evolution API',
         'Renderização 3D Interativa (@react-three/fiber)',
         'Engenharia de Missão Crítica & Suporte VIP',
       ],
@@ -58,7 +62,7 @@ export default function PricingSection() {
   return (
     <section id="pacotes" className="bg-[#E8F0EA] text-[#0A140E] py-28 px-6 relative">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -68,13 +72,13 @@ export default function PricingSection() {
           className="text-center max-w-3xl mx-auto mb-20 transform-gpu will-change-transform"
         >
           <span className="text-xs font-mono uppercase tracking-[0.3em] text-[#28593B] mb-4 block font-bold">
-            ARQUITETURA DE LUXO // PRECIFICAÇÃO DE IMPACTO
+            PROTOCOLO CAIXA PRIMEIRO // PRECIFICAÇÃO DIRETA
           </span>
           <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-[#0A140E]">
-            Arquiteturas Modulares por Nível de Carga
+            Primeiro Dinheiro no seu Caixa. Depois o Setup.
           </h2>
           <p className="mt-4 text-[#0A140E]/80 text-base md:text-lg font-light leading-relaxed">
-            Elimine a dependência de plataformas lentas. Investimento cirúrgico em código proprietário e infraestrutura escalável.
+            Sem fidelidade abusiva e sem taxa por mensagem disparada.1 carro recuperado na oficina ou 2 banhos no Pet Shop já pagam toda a mensalidade do sistema.
           </p>
         </motion.div>
 
@@ -98,8 +102,8 @@ export default function PricingSection() {
               >
                 {/* Highlight Badge */}
                 {isFeatured && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#D4AF37] text-[#0A140E] font-mono text-[10px] font-extrabold px-4 py-1 rounded-full uppercase tracking-widest shadow-md">
-                    RECOMENDADO PARA ALTA PERFORMANCE
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#D4AF37] text-[#0A140E] font-mono text-[10px] font-extrabold px-4 py-1 rounded-full uppercase tracking-widest shadow-md whitespace-nowrap">
+                    DESTAQUE PRINCIPAL // VALIDAÇÃO EM 48H
                   </div>
                 )}
 
@@ -152,7 +156,7 @@ export default function PricingSection() {
                 {/* CTA Button */}
                 <div className="pt-4 border-t border-[#28593B]/20">
                   <motion.a
-                    href="#contato"
+                    href="/auditoria"
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     className={`w-full inline-block text-center py-3.5 px-6 rounded-xl font-mono text-sm uppercase tracking-wider transition-all duration-300 font-bold transform-gpu ${
@@ -161,7 +165,7 @@ export default function PricingSection() {
                         : 'border border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A140E] hover:shadow-[0_0_20px_#D4AF37]'
                     }`}
                   >
-                    Solicitar Arquitetura
+                    {tier.ctaLabel}
                   </motion.a>
                 </div>
               </motion.div>

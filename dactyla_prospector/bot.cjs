@@ -1,7 +1,8 @@
 /**
- * DACTYLA CODE // AGÊNCIA DE TECNOLOGIA
+ * DACTYLA CODE // AGÊNCIA DE TECNOLOGIA & ENGENHARIA DE RECEITA
  * ASSISTENTE EXECUTIVO DE VENDAS B2B COM INTELIGÊNCIA ARTIFICIAL CONVERSACIONAL (LLM HYBRID ENGINE)
- * Suporta: Gemini API / OpenAI API / Groq API / Ollama Local (Llama 3) com Fallback Inteligente.
+ * Foco: Productized Service B2B Local-First em Caraguatatuba/SP ("Protocolo Caixa Primeiro em 48h").
+ * Suporta: Gemini API / Groq API / Ollama Local (Llama 3) com Fallback Inteligente.
  */
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
@@ -91,15 +92,18 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // SYSTEM PROMPT EXECUTIVO DA DACTYLA CODE (LLM SALES CONSULTANT)
 // ----------------------------------------------------------------------
 const SYSTEM_PROMPT = `
-Você é o Consultor Executivo de Vendas B2B da Dactyla Code — Agência de Tecnologia de Alta Performance fundada pelos engenheiros de software Gabriel Hatakeyama (CTO) e Matheus.
+Você é o Consultor Executivo de Vendas B2B da Dactyla Code — Engenharia de Receita e Automação em Caraguatatuba/SP, fundada pelos engenheiros Gabriel Hatakeyama (CTO) e Matheus.
 
-DIRETRIZES DE PERSONA E CONVERSAÇÃO:
-1. TOM DE VOZ: Executivo, altamente educado, persuasivo, seguro e consultivo. NUNCA seja prolixo ou robótico.
-2. TAMANHO DA RESPOSTA: No máximo 2 a 3 frases curtas e diretas. Responda como um humano digitando no WhatsApp.
-3. OBJETIVO: Entender quem é o cliente, o nome da empresa dele e o principal desafio (vendas, site, automação, sistema).
-4. PREÇOS E ORÇAMENTOS: Nunca dê um valor fixo imediato. Explique com autoridade que os projetos são desenvolvidos sob medida após um diagnóstico técnico do escopo para garantir o ROI.
-5. CONDUÇÃO DE FECHAMENTO: Apresente o link da agenda dos fundadores (https://cal.com/agenciadactylacode-ddyia5/30min) de forma natural para o cliente travar um horário de diagnóstico.
-6. RESPEITO: Se o cliente disser que não tem interesse ou pedir para parar, encerre com polidez imediata.
+DIRETRIZES DE PERSONA E OFERTA (PRODUCTIZED SERVICE LOCAL-FIRST):
+1. TOM DE VOZ: Executivo, humano, direto e focado em dinheiro no caixa do lojista. NUNCA seja prolixo ou robótico.
+2. TAMANHO DA RESPOSTA: No máximo 2 a 3 frases curtas e diretas. Responda como um especialista humano digitando no WhatsApp.
+3. OFERTA CENTRAL ("Motor de Reativação WhatsApp em 48h"):
+   - Fazemos um Disparo de Validação em 48h para 60 clientes inativos da loja (Oficina/Troca de Óleo, Pet Shop/Banho & Tosa ou Barbearia) direto no WhatsApp atual da loja.
+   - Cláusula de Risco Zero: O lojista SÓ paga o Setup de R$ 400,00 DEPOIS de ver os clientes respondendo e agendando no próprio celular.
+   - Mensalidade Recorrente (MRR): R$ 130,00/mês (com R$ 0,00 de taxa por mensagem, aviso de serviço pronto com 1 clique e campanha de horários ociosos de terça e quarta-feira).
+   - Se o cliente também precisar de Site de Alta Conversão + Motor IA, temos o plano "Presença Prime + Motor IA" (Setup R$ 1.350 + R$ 147/mês) ou projetos "Dactyla Custom & Big Data" (Sob Consulta).
+4. CONDUÇÃO DE FECHAMENTO: Pergunte qual é o ramo da loja (Oficina, Pet Shop ou Barbearia) para liberar o Teste de 48h com Risco Zero, ou envie a agenda técnica (https://cal.com/agenciadactylacode-ddyia5/30min).
+5. RESPEITO: Se o cliente disser que não tem interesse ou pedir para parar, encerre com polidez imediata.
 `;
 
 const { sanitizeLLMPromptInput } = require('./security_sanitizer.cjs');
@@ -147,7 +151,7 @@ async function fetchLLMResponse(rawUserMessage, chatHistory = []) {
           { role: 'user', content: userMessage }
         ],
         temperature: 0.6,
-        max_tokens: 150
+        max_tokens: 180
       });
 
       const resText = await makeHttpRequest(
@@ -176,7 +180,7 @@ async function fetchLLMResponse(rawUserMessage, chatHistory = []) {
       stream: false
     });
 
-    const resText = await makeHttpRequest(OLLAMA_URL, 'POST', { 'Content-Type': 'application/json' }, payload, 2000);
+    const resText = await makeHttpRequest(OLLAMA_URL, 'POST', { 'Content-Type': 'application/json' }, payload, 2500);
     const parsed = JSON.parse(resText);
     if (parsed && parsed.response) {
       logEvent('LLM OLLAMA OK', '', 'Resposta gerada via Ollama Local');
@@ -222,36 +226,36 @@ function generateDynamicFallbackResponse(text, history) {
 
   // Rejeição
   if (/não quero|nao quero|sem interesse|pare|remover|remova|cancela|sair/i.test(lower)) {
-    return 'Compreendido. Agradecemos a atenção e desejamos excelente sucesso nos seus negócios.';
+    return 'Compreendido perfeitamente. Agradecemos a atenção e desejamos excelentes negócios aí em Caraguá!';
   }
 
-  // Preço / Orçamento
-  if (/caro|preço|preco|valor|quanto é|quanto e|quanto custa|custa|investimento|tabela/i.test(lower)) {
+  // Preço / Orçamento / Risco Zero
+  if (/caro|preço|preco|valor|quanto é|quanto e|quanto custa|custa|investimento|tabela|400|130/i.test(lower)) {
     const priceVariants = [
-      'Nossos projetos são desenvolvidos sob medida de acordo com o escopo necessário para a sua empresa. Qual é o principal objetivo ou sistema que você busca implementar no momento?',
-      'Trabalhamos com soluções engenheiradas sob medida para garantir o máximo retorno sobre o investimento. Qual é a sua empresa e o principal desafio atual?'
+      'O nosso Motor de Reativação WhatsApp em 48h tem Setup de R$ 400 (com Risco Zero: você só paga após ver 60 clientes inativos respondendo no seu WhatsApp) + R$ 130/mês sem taxa por mensagem. Qual é o ramo da sua loja hoje?',
+      'Trabalhamos com o Protocolo Risco Zero em Caraguá: fazemos o disparo para 60 clientes sumidos da sua loja em 48h e você só paga os R$ 400 de implantação depois do resultado no caixa (mensalidade de R$ 130/mês). Quer testar essa semana?'
     ];
     return priceVariants[Math.floor(Math.random() * priceVariants.length)];
   }
 
-  // Pedido de Site / Automação / Sistema
-  if (/site|plataforma|sistema|automação|automacao|criar|desenvolver|fazer um site|aplicativo|app/i.test(lower)) {
+  // Pedido de Site / Automação / Sistema / Reativação
+  if (/site|plataforma|sistema|automação|automacao|reativa|inativo|oficina|pet|barbearia|clientes/i.test(lower)) {
     const serviceVariants = [
-      'Excelente! Desenvolvemos ecossistemas web e soluções sob medida com foco exclusivo em alta conversão e performance. Qual é o nome da sua empresa?',
-      'Perfeito. Construímos plataformas web e automações de atendimento de alta performance. Para direcionar melhor, qual é o seu segmento de mercado?'
+      'Excelente! Conectamos o Motor de Reativação direto no WhatsApp atual da sua loja em 2 minutos para resgatar clientes inativos e lotar sua terça e quarta-feira. Qual é o nome do seu estabelecimento?',
+      'Perfeito! Além do Motor de Reativação em 48h (Setup R$ 400 + R$ 130/mês), temos o Presença Prime + Motor IA (R$ 1.350 + R$ 147/mês) com site ultrarrápido no Google. Qual dos dois faz mais sentido para o seu momento?'
     ];
     return serviceVariants[Math.floor(Math.random() * serviceVariants.length)];
   }
 
   // Cumprimento Inicial
-  if (/^oi\b|^olá\b|^ola\b|^bom dia\b|^boa tarde\b|^boa noite\b/i.test(lower)) {
-    return 'Olá! Seja bem-vindo à Dactyla Code. Sou o assistente executivo dos fundadores, Gabriel e Matheus. Como podemos impulsionar o seu negócio hoje?';
+  if (/^oi\b|^olá\b|^ola\b|^bom dia\b|^boa tarde\b|^boa noite\b|^opa\b/i.test(lower)) {
+    return 'Opa, tudo bem? Seja bem-vindo à Dactyla Code em Caraguatatuba. Sou o assistente executivo do Gabriel e do Matheus. Você gostaria de testar nosso Motor de Reativação de Clientes em 48h com Risco Zero?';
   }
 
   // Padrão Consultivo
   const defaultVariants = [
-    'Entendido perfeitamente. É exatamente o escopo que cobrimos com a nossa engenharia de software.',
-    'Excelente. Nós desenvolvemos a infraestrutura sob medida para resolver exatamente esse tipo de demanda na sua operação.'
+    'Perfeito! Com o nosso Motor de Reativação em 48h, nós reativamos 60 clientes sumidos do seu balcão antes de você pagar qualquer centavo do setup de R$ 400. Qual é o nome da sua empresa para o Gabriel preparar o seu teste?',
+    'Entendido!1 carro recuperado na oficina ou 2 banhos no Pet Shop já pagam toda a mensalidade de R$ 130/mês do nosso motor. Como está o movimento de terça e quarta-feira aí na loja?'
   ];
   return defaultVariants[Math.floor(Math.random() * defaultVariants.length)];
 }
@@ -283,7 +287,7 @@ function syncLeadStageToCloud(companyName, phone, stage) {
   try {
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
-    
+
     const payloadData = JSON.stringify({
       leads: [
         {
@@ -316,7 +320,7 @@ function syncLeadStageToCloud(companyName, phone, stage) {
       }
     });
 
-    req.on('error', (err) => {});
+    req.on('error', () => {});
     req.write(payloadData);
     req.end();
   } catch (e) {}
@@ -351,30 +355,52 @@ client.on('ready', () => {
 // SYSTEM PROMPT EXECUTIVO DACTYLA DIAGNOSTIC AI (ROLE-PROMPTING + COT)
 // ----------------------------------------------------------------------
 const DIAGNOSTIC_AI_SYSTEM_PROMPT = `
-Você é o Consultor B2B Sênior da Dactyla Code — autoridade em Engenharia de Software e Automação Comercial no Litoral Norte de SP.
+Você é o Consultor B2B Sênior da Dactyla Code — autoridade em Engenharia de Receita e Automação Comercial no Litoral Norte de SP (Caraguatatuba).
 
 Você recebeu a auditoria digital recém-concluída pelo cliente no nosso site.
 
-REGRAS RÍGOROSAS DE RESPOSTA DA IA:
+REGRAS RIGOROSAS DE RESPOSTA DA IA:
 1. ANÁLISE CONDICIONAL DE SCORE:
-   - Se o Score for MENOR que 50 (< 50): Aja com tom de alerta cirúrgico. Alerte com urgência sobre a perda constante de receita e clientes no WhatsApp por causa da lentidão e falta de site. Recomende o fechamento imediato do pacote "Sprint de Conversão (R$ 497)".
-   - Se o Score for MAIOR OU IGUAL a 50 (>= 50): Elogie a estrutura atual da empresa, mas aponte os gargalos operacionais para escalar com segurança e recomende o pacote "Presença Prime" ou "Ecossistema IA".
+   - Se o Score for MENOR que 50 (< 50): Aja com tom de alerta cirúrgico. Alerte com urgência sobre o dinheiro deixado na mesa todos os meses com clientes inativos esquecidos e demora no WhatsApp. Recomende o fechamento imediato do "Motor de Reativação WhatsApp em 48h (Setup R$ 400 + R$ 130/mês com Teste de Risco Zero)", explicando que reativamos 60 clientes sumidos antes de ele pagar o setup.
+   - Se o Score for MAIOR OU IGUAL a 50 (>= 50): Elogie a base atual da empresa, mas aponte como blindar a recorrência na baixa temporada combinando o "Motor de Reativação WhatsApp em 48h (Setup R$ 400 + R$ 130/mês com Teste de Risco Zero)" ou o pacote completo "Presença Prime + Motor IA (Setup R$ 1.350 + R$ 147/mês)".
 2. REGRAS DE ESTILO E TAMANHO:
-   - Resposta em no máximo 2 parágrafos curtos, executivos e sem jargões computacionais complexos.
+   - Resposta em no máximo 2 parágrafos curtos, executivos, focados em retorno financeiro imediato no balcão e sem jargões complexos.
 3. FECHAMENTO MANDATÓRIO (OBRIGATÓRIO INCLUIR NO FINAL):
    - SEMPRE termine o segundo parágrafo com a frase exata: "O nosso Diretor Técnico (Gabriel Hatakeyama) já assumirá a linha em instantes para te passar o plano técnico de adequação."
 `;
 
 function parseAuditoriaTrigger(text) {
-  if (!text) return null;
-  const match = text.match(/#AUDITORIA_DACTYLA\s*\|\s*Nome:\s*([^|]+)\|\s*Path:\s*([^|]+)\|\s*Score:\s*(\d+)\/100\|\s*Resumo:\s*(.+)/i);
-  if (!match) return null;
-  return {
-    empresa: match[1].trim(),
-    path: match[2].trim(),
-    score: parseInt(match[3].trim(), 10),
-    resumo: match[4].trim()
-  };
+  if (!text || !String(text).includes('#AUDITORIA_DACTYLA')) return null;
+
+  // 1. Tenta regex resiliente com espaços opcionais antes e depois de cada pipe (\s*\|\s*)
+  const regexMatch = String(text).match(
+    /#AUDITORIA_DACTYLA\s*\|\s*Nome:\s*([^|]+?)\s*\|\s*Path:\s*([^|]+?)\s*\|\s*Score:\s*(\d+)\s*\/\s*100\s*\|\s*Resumo:\s*(.+)/is
+  );
+  if (regexMatch) {
+    return {
+      empresa: regexMatch[1].trim(),
+      path: regexMatch[2].trim(),
+      score: parseInt(regexMatch[3].trim(), 10),
+      resumo: regexMatch[4].trim()
+    };
+  }
+
+  // 2. Fallback resiliente via .split('|') igual ao test_diagnostic_ai.cjs
+  const parts = String(text).split('|').map(p => p.trim());
+  if (parts.length < 5) return null;
+
+  const empresa = (parts.find(p => /^Nome:/i.test(p)) || parts[1] || '').replace(/^Nome:\s*/i, '').trim();
+  const pathVal = (parts.find(p => /^Path:/i.test(p)) || parts[2] || '').replace(/^Path:\s*/i, '').trim();
+  const scorePart = parts.find(p => /^Score:/i.test(p)) || parts[3] || '';
+  const scoreMatch = scorePart.match(/(\d+)\s*\/\s*100/);
+  const score = scoreMatch ? parseInt(scoreMatch[1], 10) : 45;
+  const resumoIdx = parts.findIndex(p => /^Resumo:/i.test(p));
+  const resumo = resumoIdx >= 0
+    ? parts.slice(resumoIdx).join(' | ').replace(/^Resumo:\s*/i, '').trim()
+    : parts.slice(4).join(' | ').trim();
+
+  if (!empresa) return null;
+  return { empresa, path: pathVal || 'Rápida', score, resumo };
 }
 
 // ----------------------------------------------------------------------
@@ -408,7 +434,7 @@ client.on('message', async (msg) => {
     }
 
     processingUsers.add(userId);
-    
+
     let chat = null;
     try {
       chat = await msg.getChat();
@@ -435,15 +461,23 @@ DADOS DA AUDITORIA RECEBIDA DO CLIENTE:
 Gere o diagnóstico executivo agora (máximo 2 parágrafos):`;
 
         let diagnosticResponse = "";
+        const mandatoryEnding = "O nosso Diretor Técnico (Gabriel Hatakeyama) já assumirá a linha em instantes para te passar o plano técnico de adequação.";
+
         try {
           diagnosticResponse = await fetchLLMResponse(promptText, []);
-          const mandatoryEnding = "O nosso Diretor Técnico (Gabriel Hatakeyama) já assumirá a linha em instantes para te passar o plano técnico de adequação.";
           if (!diagnosticResponse.includes("Gabriel Hatakeyama")) {
             diagnosticResponse = `${diagnosticResponse.trim()}\n\n${mandatoryEnding}`;
           }
         } catch (e) {
-          diagnosticResponse = `Olá! Recebemos a auditoria da ${parsedAudit.empresa} com Score ${parsedAudit.score}/100.\n\nO nosso Diretor Técnico (Gabriel Hatakeyama) já assumirá a linha em instantes para te passar o plano técnico de adequação.`;
+          if (parsedAudit.score < 50) {
+            diagnosticResponse = `Olá! Analisamos a auditoria da *${parsedAudit.empresa}* (Score ${parsedAudit.score}/100) e identificamos um alerta crítico de receita ficando na mesa com clientes inativos e demora no WhatsApp. Recomendamos ativar imediatamente o nosso *Motor de Reativação WhatsApp em 48h (Setup R$ 400 + R$ 130/mês com Teste de Risco Zero)*: nós disparamos para 60 clientes sumidos da sua loja primeiro, e você só paga o setup depois de ver o pessoal agendando no seu próprio WhatsApp.\n\n${mandatoryEnding}`;
+          } else {
+            diagnosticResponse = `Olá! Recebemos a auditoria da *${parsedAudit.empresa}* com excelente base operacional (Score ${parsedAudit.score}/100). Para blindar o seu caixa fora de temporada e automatizar o retorno de clientes, recomendamos o *Motor de Reativação WhatsApp em 48h (Setup R$ 400 + R$ 130/mês com Teste de Risco Zero)* ou o ecossistema *Presença Prime + Motor IA (R$ 1.350 + R$ 147/mês)*.\n\n${mandatoryEnding}`;
+          }
         }
+
+        userState.set(userId, state);
+        savePersistedStates(userState);
 
         await sendHumanizedMessage(msg, chat, diagnosticResponse);
         syncLeadStageToCloud(parsedAudit.empresa, cleanPhone, 'abordados');
@@ -468,7 +502,7 @@ Gere o diagnóstico executivo agora (máximo 2 parágrafos):`;
 
     if (state.history.length >= 4 && !state.history.some(h => h.includes('cal.com'))) {
       await sleep(1500);
-      const scheduleMsg = "Se desejar antecipar seu diagnóstico técnico com o Gabriel e o Matheus, você pode agendar um horário direto na nossa agenda oficial:\nhttps://cal.com/agenciadactylacode-ddyia5/30min 📅";
+      const scheduleMsg = "Se quiser já travar o seu Teste de 48h com Risco Zero direto com o Gabriel e o Matheus, você também pode escolher um horário rápido aqui:\nhttps://cal.com/agenciadactylacode-ddyia5/30min 📅";
       await sendHumanizedMessage(msg, chat, scheduleMsg);
       state.history.push(`Assistente Dactyla: ${scheduleMsg}`);
       syncLeadStageToCloud(state.companyName, cleanPhone, 'reuniao');
@@ -491,4 +525,12 @@ client.on('disconnected', (reason) => {
   }, 5000);
 });
 
-client.initialize();
+if (require.main === module) {
+  client.initialize();
+}
+
+module.exports = {
+  parseAuditoriaTrigger,
+  SYSTEM_PROMPT,
+  DIAGNOSTIC_AI_SYSTEM_PROMPT
+};

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support {
     class CustomLog {
         public static function write(string $level, string $msg, array $context = []): void {
-            $baseDir = 'C:/Users/Usuario/Desktop/Agencia de Tecnologia/presenca-prime';
+            $baseDir = dirname(__DIR__);
             $logDir = $baseDir . '/storage/logs';
             if (!is_dir($logDir)) {
                 @mkdir($logDir, 0777, true);
@@ -130,7 +130,7 @@ namespace Illuminate\Http {
 namespace {
     define('LARAVEL_START', microtime(true));
 
-    $baseDir = 'C:/Users/Usuario/Desktop/Agencia de Tecnologia/presenca-prime';
+    $baseDir = dirname(__DIR__);
 
     $logDir = $baseDir . '/storage/logs';
     if (!is_dir($logDir)) {

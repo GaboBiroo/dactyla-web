@@ -14,7 +14,7 @@ class Message
             return $GLOBALS['pdo'];
         }
 
-        $baseDir = 'C:/Users/Usuario/Desktop/Agencia de Tecnologia/presenca-prime';
+        $baseDir = dirname(__DIR__, 2);
         $dbConnection = getenv('DB_CONNECTION') ?: 'pgsql';
 
         if ($dbConnection === 'pgsql') {
