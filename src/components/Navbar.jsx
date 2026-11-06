@@ -3,13 +3,14 @@ import { motion } from 'framer-motion';
 
 const navLinks = [
   { label: 'Home', href: '#home' },
+  { label: 'Calculadora ROI', href: '#impacto' },
+  { label: 'Planos 48h', href: '#pacotes' },
   { label: 'A Agência', href: '#diretoria' },
-  { label: 'Impacto', href: '#impacto' },
-  { label: 'Pacotes', href: '#pacotes' },
-  { label: 'Contato', href: '#contato' },
+  { label: 'Auditoria 48h', href: '/auditoria', isRoute: true },
+  { label: 'App Balcão', href: '/balcao', isRoute: true },
 ];
 
-export default function Navbar() {
+export default function Navbar({ onNavigate }) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -18,6 +19,16 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  const handleLinkClick = (e, link) => {
+    if (link.isRoute && onNavigate) {
+      e.preventDefault();
+      setMobileOpen(false);
+      onNavigate(link.href);
+    } else {
+      setMobileOpen(false);
+    }
+  };
 
   return (
     <motion.header
@@ -49,15 +60,22 @@ export default function Navbar() {
         </a>
 
         {/* Links Desktop */}
-        <ul className="hidden md:flex items-center gap-10">
+        <ul className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
-                className="relative text-sm font-light tracking-wide text-[#E8F0EA]/70 hover:text-[#E8F0EA] transition-colors duration-300 group"
+                onClick={(e) => handleLinkClick(e, link)}
+                className={`relative text-sm font-light tracking-wide transition-colors duration-300 group ${
+                  link.href === '/balcao'
+                    ? 'px-3.5 py-1.5 rounded border border-[#D4AF37]/40 text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#0A140E] font-mono text-xs uppercase'
+                    : 'text-[#E8F0EA]/70 hover:text-[#E8F0EA]'
+                }`}
               >
                 {link.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#D4AF37] group-hover:w-full transition-all duration-500 ease-out" />
+                {link.href !== '/balcao' && (
+                  <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-[#D4AF37] group-hover:w-full transition-all duration-500 ease-out" />
+                )}
               </a>
             </li>
           ))}
@@ -88,7 +106,7 @@ export default function Navbar() {
               <li key={link.href}>
                 <a
                   href={link.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(e) => handleLinkClick(e, link)}
                   className="text-lg font-serif font-light text-[#E8F0EA]/80 hover:text-[#D4AF37] transition-colors block"
                 >
                   {link.label}

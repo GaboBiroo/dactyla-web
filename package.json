@@ -1,12 +1,13 @@
 {
-  "name": "agencia-de-tecnologia",
+  "name": "dactyla-code-ecosystem",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
+    "test": "node dactyla_store_appliance/tests/test_suite.cjs",
     "preview": "vite preview",
     "prepare": "node -e \"if (!process.env.CI) { try { require('child_process').execSync('husky install'); } catch (e) {} }\" || true"
   },

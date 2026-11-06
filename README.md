@@ -1,11 +1,11 @@
 <div align="center">
 
 # ⚡ DACTYLA CODE // ECOSSISTEMA B2B LOCAL-FIRST
-### *Engenharia de Receita, Motor de Reativação Preditiva 48h & Automação Comercial de Alta Performance*
+### *Engenharia de Receita, Motor de Reativação Preditiva 48h &amp; Appliance Plug-and-Play para Comércios*
 
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4.2-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-8.2-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4.3-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-v20+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/Docker-Local--First-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
@@ -14,10 +14,10 @@
 
 <p align="center">
   <b>Máquina B2B de Geração de Caixa Imediato ("Protocolo Caixa Primeiro em 48h") &amp; Engenharia de Software Proprietária.</b><br>
-  Projetada para dominar a retenção de clientes e a automação comercial no Litoral Norte de São Paulo (Caraguatatuba, São Sebastião, Ubatuba e Ilhabela).
+  Projetada sob rigor acadêmico e industrial (Padrão Poli-USP &amp; Harvard CS) para dominar a retenção de clientes e a automação comercial no Litoral Norte de São Paulo (Caraguatatuba, São Sebastião, Ubatuba e Ilhabela).
 </p>
 
-[🌐 Website Oficial](https://www.dactylacode.com.br) • [⚡ Simulador & Auditoria 48h](https://www.dactylacode.com.br/auditoria) • [📊 Dactyla CRM Hub](https://www.dactylacode.com.br/dactyla-hub)
+[🌐 Website Oficial](https://www.dactylacode.com.br) • [⚡ Simulador & Auditoria 48h](https://www.dactylacode.com.br/auditoria) • [🏪 App de Balcão do Lojista](https://www.dactylacode.com.br/balcao) • [📊 Dactyla CRM Hub](https://www.dactylacode.com.br/dactyla-hub)
 
 ---
 
@@ -25,7 +25,7 @@
 
 ## 🎯 Visão Executiva & Modelo Productized Service ("Protocolo Caixa Primeiro em 48h")
 
-O monorepo da **Dactyla Code** une uma vitrine digital **Dark Luxury** de altíssima conversão (React 19 + Three.js WebGL + Leaflet Geo-Mapping) a uma infraestrutura **Local-First de Custo Marginal Zero** para reativação preditiva de clientes inativos via WhatsApp.
+O monorepo da **Dactyla Code** une uma vitrine digital **Dark Luxury** de altíssima conversão (React 19 + Three.js WebGL + Leaflet Geo-Mapping) a uma infraestrutura **Local-First de Custo Marginal Zero** e um **Kit Plug-and-Play de Balcão (`dactyla_store_appliance/`)** para instalação em menos de 10 minutos nas dependências do comércio.
 
 ### Os 3 Subnichos-Alvo Homologados (Estudo Caraguatatuba/SP)
 
@@ -35,18 +35,9 @@ O monorepo da **Dactyla Code** une uma vitrine digital **Dark Luxury** de altís
 | 🐾 **Pet Shops / Banho & Tosa / Clínicas Vet** | `R$ 85,00` | `30 dias` | **2 banhos recuperados/mês** já pagam o sistema (R$ 0/msg vs. R$ 0,50/msg SimplesVet) | **R$ 1.275/mês** |
 | 💈 **Barbearias & Estética Masculina** | `R$ 75,00` | `21 dias` | **2 combos no caixa bruto** (ou 4 no lucro líquido) pagam toda a operação | **R$ 1.125/mês** |
 
-### Escada de Produtos (Pricing Tiers)
-1. **Nível 01 — Motor de Reativação 48h (Destaque Principal — Protocolo Risco Zero)**:
-   - **Setup:** `R$ 400,00` *(pago somente após validação prática de 48h abordando 60 clientes inativos da loja)*.
-   - **MRR:** `R$ 130,00/mês` *(sustentação técnica, hospedagem local da instância, R$ 0,00 de taxa por mensagem, aviso de serviço pronto com 1 clique e campanhas de terça/quarta-feira)*.
-2. **Nível 02 — Presença Prime + Motor IA**:
-   - **Setup:** `R$ 1.350,00` + `R$ 147,00/mês` *(SPA em Next.js/React Score 90+ Lighthouse + SEO Local Google Maps + Motor de Reativação 48h completo + Nó no Mapa Interativo de Caraguá)*.
-3. **Nível 03 — Engenharia Custom / Big Data**:
-   - **Sob Consulta** *(Sistemas Multi-Tenant, ETL de bancos legados Firebird `.fdb`, Engenharia de Dados RAIS/CAGED e renderização 3D interativa)*.
-
 ---
 
-## 📐 Topologia da Arquitetura Híbrida (Vercel Edge + Host Local 32GB RAM)
+## 📐 Topologia da Arquitetura Híbrida (Vercel Edge + Host 32GB + Store Appliance)
 
 ```mermaid
 flowchart TD
@@ -54,13 +45,22 @@ flowchart TD
         UI["Landing Page Dark Luxury (React 19 + Three.js + Leaflet)"]
         CALC["Calculadora Interativa de ROI (#impacto)"]
         AUDIT["Funil de Diagnóstico & Risco Zero (/auditoria)"]
+        BALCAO["App Plug-and-Play de Balcão do Lojista (/balcao)"]
         HUB["Dactyla CRM Kanban Hub (/dactyla-hub)"]
         API_CONTACT["POST /api/contact (Resend Transactional Email)"]
-        API_SYNC["GET/POST /api/leads-sync (2-Way Cloud Kanban Sync)"]
-        API_AUTH["POST /api/auth-crm (HMAC-SHA256 timingSafeEqual)"]
+        API_SYNC["GET/POST/PATCH /api/leads-sync (2-Way Cloud Kanban)"]
+        API_MERCHANT["GET/POST /api/merchant-trigger (1-Click Ready & Schedule)"]
+        API_KEEP["GET /api/supabase-keepalive (Cron Healthcheck)"]
     end
 
-    subgraph LOCAL_HOST ["🖥️ Servidor Host Local-First (Ryzen 5 5600G | 32GB RAM | Docker Compose)"]
+    subgraph STORE_APPLIANCE ["🏪 Kit Plug-and-Play no Comércio (dactyla_store_appliance)"]
+        INSTALLER["install_store_agent.ps1 (Provisionador 1-Clique Windows)"]
+        EXTRACTOR["universal_inactives_extractor.py (CSV / SQLite / Firebird -> 60 Inativos)"]
+        DAEMON["store_local_server.cjs (Daemon Local :4848 + Agenda Preditiva)"]
+        TESTS["tests/test_suite.cjs (Suíte Automatizada E2E USP/Harvard)"]
+    end
+
+    subgraph LOCAL_HOST ["🖥️ Servidor Host Central (Ryzen 5 5600G | 32GB RAM | Docker Compose)"]
         CF["Cloudflare Tunnel (cloudflared Zero-Trust)"]
         EVO["Evolution API v2.1.1 (Multi-Instance WhatsApp Engine)"]
         N8N_MAIN["n8n Main Orchestrator (Queue Mode)"]
@@ -78,11 +78,14 @@ flowchart TD
 
     UI --> CALC
     UI --> AUDIT
+    UI --> BALCAO
+    BALCAO --> API_MERCHANT
+    BALCAO <-->|HTTP :4848| DAEMON
+    INSTALLER --> EXTRACTOR
+    EXTRACTOR -->|store_inactives_queue.json| REACT_ENG
     AUDIT -->|POST Lead + Trigger #AUDITORIA_DACTYLA| API_SYNC
     AUDIT -->|Redireciona WhatsApp 5512992109408| BOT
-    UI -->|Briefing Modal| API_CONTACT
-    HUB <-->|Sincronização em Tempo Real| API_SYNC
-
+    HUB <-->|2-Way PATCH/GET| API_SYNC
     CF --> N8N_MAIN
     CF --> EVO
     N8N_MAIN <--> RD
@@ -90,30 +93,7 @@ flowchart TD
     N8N_MAIN <--> PG
     EVO <--> PG
     EVO <--> RD
-
-    MINER -->|mined_leads_unused.json| DISPARO
-    MINER -->|POST x-prospector-key| API_SYNC
-    BOT -->|Move Card no Kanban| API_SYNC
-    REACT_ENG -->|Disparo Humanizado (Typing 4s + Jitter 45-120s)| EVO
 ```
-
----
-
-## 🎨 Design System: Dark Luxury & Performance GPU
-
-O frontend foi engenheirado para atingir fluidez de 60 FPS tanto em desktops quanto em dispositivos móveis de entrada:
-
-- **Paleta Cromática Rigorosa**:
-  - `#0A140E` *(Dark Moss — Background Primário)*
-  - `#E8F0EA` *(Light Leaf — Tipografia Principal & Contraste Pricing)*
-  - `#28593B` *(Forest Green — Bordas Estruturais & Glow Ambiental)*
-  - `#D4AF37` *(Luxury Gold — Destaques, Badges de ROI e CTAs Primários)*
-- **Tipografia Editorial & Técnica**:
-  - Títulos: `Cormorant Garamond` (Serif Editorial)
-  - Corpo e UI: `Plus Jakarta Sans` (Sans-Serif Geométrica)
-  - Dados, Métricas e Badges: `JetBrains Mono` (Monospace Técnica)
-- **Engenharia 3D & Prevenção de Scroll-Trap**:
-  - Renderização WebGL (`@react-three/fiber` + `@react-three/drei`) do mascote oficial `Tamandua.gltf` no desktop (`window.innerWidth >= 768`) e geometria vetorial acelerada por hardware (`StandaloneRotatingGeometry`) no mobile, eliminando travamentos de rolagem (`pointer-events-none md:pointer-events-auto` e `transform-gpu will-change-transform`).
 
 ---
 
@@ -124,11 +104,17 @@ Agencia de Tecnologia/
 ├── api/                                         # Vercel Serverless Functions (Node.js ESM)
 │   ├── auth-crm.js                              # Autenticação HMAC-SHA256 com crypto.timingSafeEqual
 │   ├── contact.js                               # Disparo transacional Resend (Motor 48h & Projetos Custom)
-│   └── leads-sync.js                            # API REST 2-Way para o Kanban Executivo (/dactyla-hub)
+│   ├── leads-sync.js                            # API REST 2-Way (GET/POST/PATCH) para o Kanban Executivo
+│   ├── merchant-trigger.js                      # Gatilho de Balcão (Serviço Pronto + Agendamento Preditivo)
+│   └── supabase-keepalive.js                    # Cron Healthcheck & Keep-Alive da infraestrutura Serverless
 │
-├── docker/
-│   └── postgres/
-│       └── init.sql                             # Criação automática dos DBs (n8n, evolution) e tabelas multi-tenant
+├── dactyla_store_appliance/                     # Kit Plug-and-Play para Instalação nas Dependências do Comércio
+│   ├── install_store_agent.ps1                  # Instalador 1-clique PowerShell para PC Windows da loja
+│   ├── universal_inactives_extractor.py         # Extrator Universal (CSV/SQLite/Firebird) -> Lote 60 Inativos
+│   ├── store_local_server.cjs                   # Micro-servidor local (:4848) de balcão e agenda preditiva
+│   ├── README_INSTALACAO_COMERCIO.md            # Manual SOP de Implantação em 10 Minutos no Comércio
+│   └── tests/
+│       └── test_suite.cjs                       # Suíte Automatizada de Testes Unitários e de Integração
 │
 ├── dactyla_prospector/                          # Motor B2B de Prospecção & Reativação de Clientes
 │   ├── bot.cjs                                  # Assistente Conversacional LLM (Gemini/Groq/Ollama) + #AUDITORIA_DACTYLA
@@ -139,87 +125,47 @@ Agencia de Tecnologia/
 │   ├── sample_client_inactives.json             # Base de demonstração para Dry-Run dos 3 Playbooks de Reativação
 │   └── package.json                             # Scripts operacionais (start, disparo, reactivate, test-ai)
 │
+├── docker/
+│   └── postgres/
+│       └── init.sql                             # Criação automática dos DBs (n8n, evolution) e tabelas multi-tenant
+│
 ├── dactyla_engine/                              # Engenharia de PDV Offline-First & Big Data Regional
-│   ├── etl_firebird_migrator.py                 # Extrator ETL de bancos legados Firebird (.fdb) para UTF-8
-│   ├── market_intelligence_rais_caged.py        # Inteligência econômica do Litoral Norte SP
-│   ├── sat_nfc_bridge.go                        # Bridge REST em Go para comunicação com hardware SAT SEFAZ-SP
-│   └── web_thermal_printer.js                   # Impressão térmica direta via navegador (WebUSB / Web Serial ESC/POS)
-│
 ├── presenca-prime/                              # Micro-Framework Webhook Meta Cloud API (PHP 8.2+)
-│   ├── app/Models/Lead.php                      # Persistência resiliente PostgreSQL / SQLite com path dinâmico
-│   ├── app/Models/Message.php                   # Registro de WAMIDs e payloads com idempotência
-│   └── public/index.php                         # Front-controller para validação HMAC-SHA256 da Meta
-│
 ├── src/                                         # Aplicação Frontend React 19 + Vite 8 + Tailwind CSS v4
 │   ├── components/
 │   │   ├── HeroSection.jsx                      # Hero "Resgate os Clientes Sumidos em 48h" + Tamanduá 3D + Mapa
 │   │   ├── ConcreteImpact.jsx                   # Calculadora Interativa de ROI por Subnicho + 3 Blocos de Impacto
 │   │   ├── PricingSection.jsx                   # 3 Tiers (Motor 48h R$ 400 + R$ 130/mês em destaque)
 │   │   ├── AuditoriaDactyla.jsx                 # Diagnóstico Interativo + Cálculo de Break-Even + Gatilho WhatsApp
-│   │   ├── DactylaHub.jsx                       # CRM Kanban Cloud com Sincronização Automática
+│   │   ├── MerchantCounterApp.jsx               # Painel Operacional Plug-and-Play de Balcão do Lojista (/balcao)
+│   │   ├── DactylaHub.jsx                       # CRM Kanban Cloud com Sincronização 2-Way Persistente
 │   │   ├── BriefingModal.jsx                    # Captura rápida para o Protocolo Risco Zero
 │   │   ├── EliteFooter.jsx                      # Rodapé com Integração Cal.com e WhatsApp Unificado (5512992109408)
 │   │   └── MapComponent.jsx                     # Mapa Interativo Leaflet de Caraguatatuba
 │   └── App.jsx                                  # Roteamento SPA + Code-Splitting com React.lazy()
 │
 ├── docker-compose.yml                           # Stack Local-First (Postgres 16 + Redis 7 + Evolution v2 + n8n Queue + Cloudflared)
-├── vercel.json                                  # Rewrites SPA e roteamento Serverless na Vercel
-└── package.json                                 # Dependências e scripts de build do ecossistema web
+├── vercel.json                                  # Rewrites SPA e Cron Keep-Alive na Vercel
+└── package.json                                 # Dependências, scripts de build e suíte de testes (`npm test`)
 ```
 
 ---
 
-## 🚀 Guia Rápido de Operação
+## 🚀 Guia de Implantação Rápida no Comércio (SOP em 10 Minutos)
 
-### 1. Executar o Frontend e Build de Produção
-```bash
-# Instalar dependências na raiz
-npm install
+```powershell
+# 1. Rodar a Suíte Completa de Testes de Engenharia (12 asserções E2E)
+npm test
 
-# Servidor de desenvolvimento local (http://localhost:5173)
-npm run dev
+# 2. Provisionar uma nova loja no PC do comércio (extrai 60 clientes inativos e valida Spintax)
+powershell -ExecutionPolicy Bypass -File .\dactyla_store_appliance\install_store_agent.ps1 `
+  -StoreName "Centro Automotivo Litoral" `
+  -Niche "oficina"
 
-# Compilar bundle otimizado de produção para a Vercel
-npm run build
+# 3. Iniciar o disparo real de validação 48h (pareia QR Code no WhatsApp da loja)
+node .\dactyla_prospector\client_reactivation_engine.cjs `
+  --file .\dactyla_store_appliance\store_inactives_queue.json
 ```
-
-### 2. Subir a Infraestrutura Docker Local-First (32GB RAM Stack)
-```bash
-# Inicia PostgreSQL 16, Redis 7, Evolution API v2, n8n (Main + Worker em Queue Mode) e Cloudflare Tunnel
-docker compose up -d
-```
-
-### 3. Operar o Motor de Reativação de Clientes dos Lojistas (`client_reactivation_engine.cjs`)
-O motor conta com **3 Playbooks Oficiais com Spintax Nativo** (`REATIVACAO_PREDITIVA`, `SERVICO_CONCLUIDO`, `OFERTA_TERCA_QUARTA`), simulação de digitação de `4000ms`, Jitter anti-ban de `45s` a `120s` e trava estrita de `20 disparos/dia por loja`:
-
-```bash
-# Testar os 3 Playbooks em modo simulação (sem abrir o navegador)
-node dactyla_prospector/client_reactivation_engine.cjs --dry-run
-
-# Executar disparos reais para a planilha/JSON de inativos de um lojista
-node dactyla_prospector/client_reactivation_engine.cjs --file dactyla_prospector/sample_client_inactives.json
-```
-
-### 4. Operar o Minerador e Prospecção B2B dos 3 Subnichos em Caraguatatuba
-```bash
-# 1. Minerar novos celulares válidos (DDD 12 + 9º dígito) de Oficinas, Pet Shops e Barbearias
-python dactyla_prospector/miner.py
-
-# 2. Disparar abordagem do Teste de 48h (Risco Zero) respeitando horário comercial e Jitter 45s-120s
-node dactyla_prospector/disparo_massa.cjs
-
-# 3. Iniciar o Bot Consultivo de Recepção Inbound (#AUDITORIA_DACTYLA)
-node dactyla_prospector/bot.cjs
-```
-
----
-
-## 🛡️ Engenharia de Segurança (DevSecOps)
-
-- **Sanitização Contra Prompt Injection ([`security_sanitizer.cjs`](file:///c:/Users/Usuario/Desktop/Agencia%20de%20Tecnologia/dactyla_prospector/security_sanitizer.cjs))**: Filtragem ativa de instruções adversárias antes do envio para os modelos LLM (Gemini / Groq / Ollama Local).
-- **Prevenção de Path Traversal (CWE-22) e Prototype Pollution (CWE-1321)**: Validação estrita de caminhos resolvidos e reviver seguro de JSON.
-- **Autenticação Timing-Safe ([`api/auth-crm.js`](file:///c:/Users/Usuario/Desktop/Agencia%20de%20Tecnologia/api/auth-crm.js))**: Comparação criptográfica em tempo constante via `crypto.timingSafeEqual` com assinatura HMAC-SHA256.
-- **Exposição Zero-Trust**: Webhooks locais do `n8n` e `Evolution API` expostos exclusivamente via túnel criptografado outbound (`cloudflared`), sem abertura de portas NAT no roteador.
 
 ---
 

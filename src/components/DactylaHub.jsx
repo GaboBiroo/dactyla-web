@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Lock, Shield, User, Key, LogOut, Upload, Search, MessageSquare, 
-  CheckCircle2, ArrowRight, ExternalLink, RefreshCw, Layers, Phone, Mail, Building
+  CheckCircle2, ArrowRight, ExternalLink, RefreshCw, Layers, Phone, Mail, Building, Zap
 } from 'lucide-react';
 
 const STAGES = [
   { id: 'novos', title: '📌 Leads Novos', color: 'border-[#EAB308]', badgeBg: 'bg-[#EAB308]/10 text-[#EAB308] border-[#EAB308]/30' },
   { id: 'abordados', title: '💬 Abordados / Em Conversa', color: 'border-blue-500', badgeBg: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
-  { id: 'reuniao', title: '📅 Reunião Agendada', color: 'border-purple-500', badgeBg: 'bg-purple-500/10 text-purple-400 border-purple-500/30' },
-  { id: 'fechados', title: '🏆 Fechados / Cliente Dactyla', color: 'border-emerald-500', badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
+  { id: 'reuniao', title: '📅 Teste 48h / Reunião', color: 'border-purple-500', badgeBg: 'bg-purple-500/10 text-purple-400 border-purple-500/30' },
+  { id: 'fechados', title: '🏆 Fechados / MRR Ativo', color: 'border-emerald-500', badgeBg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
 ];
 
 function sanitizeCsvValue(val) {
@@ -31,7 +31,7 @@ function sanitizeWaLink(url, phone) {
   return fallback;
 }
 
-export default function DactylaHub({ onBack }) {
+export default function DactylaHub({ onBack, onOpenMerchantApp }) {
   const [session, setSession] = useState(() => {
     try {
       const saved = sessionStorage.getItem('dactyla_crm_session');
@@ -181,10 +181,21 @@ export default function DactylaHub({ onBack }) {
     reader.readAsText(file);
   };
 
-  const moveStage = (leadId, newStage) => {
+  // Sincronização 2-Way Real: atualiza estado otimista local E persiste via PATCH /api/leads-sync
+  const moveStage = async (leadId, newStage) => {
     setLeads((prev) =>
       prev.map((lead) => (lead.id === leadId ? { ...lead, stage: newStage } : lead))
     );
+
+    try {
+      await fetch('/api/leads-sync', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId, newStage }),
+      });
+    } catch (e) {
+      console.error('Erro ao persistir mudança de coluna na nuvem:', e);
+    }
   };
 
   const clearKanban = () => {
@@ -291,7 +302,7 @@ export default function DactylaHub({ onBack }) {
           <div className="w-3 h-3 rounded-full bg-[#EAB308] animate-pulse" />
           <div>
             <h1 className="font-editorial text-xl font-bold text-white tracking-wide flex items-center gap-2">
-              Dactyla Code <span className="text-[#EAB308] text-xs font-mono-code px-2 py-0.5 rounded bg-[#EAB308]/10 border border-[#EAB308]/30">CRM HUB v5.1 SECURE</span>
+              Dactyla Code <span className="text-[#EAB308] text-xs font-mono-code px-2 py-0.5 rounded bg-[#EAB308]/10 border border-[#EAB308]/30">CRM HUB v5.2 SECURE</span>
               <span className="text-emerald-400 text-[11px] font-mono-code px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" />
                 Autopilot 24/7 Ativo
@@ -314,6 +325,16 @@ export default function DactylaHub({ onBack }) {
               className="pl-9 pr-4 py-1.5 rounded bg-[#050706] border border-[#1A2E22] text-xs text-white focus:outline-none focus:border-[#EAB308] w-48 md:w-64"
             />
           </div>
+
+          {onOpenMerchantApp && (
+            <button
+              onClick={onOpenMerchantApp}
+              className="px-3.5 py-1.5 rounded bg-[#D4AF37] hover:bg-[#E8F0EA] text-xs font-mono-code font-bold text-[#0A140E] transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Painel do Lojista (/balcao)</span>
+            </button>
+          )}
 
           <label className="px-3.5 py-1.5 rounded bg-[#1A2E22] hover:bg-[#223F2E] text-xs font-mono-code font-semibold text-[#EAB308] border border-[#EAB308]/40 transition-colors flex items-center gap-1.5 cursor-pointer">
             <Upload className="w-3.5 h-3.5" />

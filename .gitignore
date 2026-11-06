@@ -36,6 +36,9 @@ dactyla_prospector/reactivation_ledger.json
 dactyla_prospector/prospects_history.json
 dactyla_prospector/tamandua_status.json
 dactyla_prospector/prospects_caraguatatuba.csv
+dactyla_store_appliance/store_inactives_queue.json
+dactyla_store_appliance/scheduled_returns.json
+dactyla_store_appliance/store_config.json
 *.csv
 
 # 3. WHATSAPP WEB AUTH & CACHE
